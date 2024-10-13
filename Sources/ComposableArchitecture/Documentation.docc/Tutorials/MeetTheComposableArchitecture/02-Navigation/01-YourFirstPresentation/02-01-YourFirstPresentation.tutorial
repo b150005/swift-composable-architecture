@@ -1,331 +1,256 @@
 @Tutorial(time: 30) {
-  @Intro(title: "Your first presentation") {
-    The Composable Architecture offers a variety of tools to help you present child features from
-    parent features. To begin, we will explore presenting a feature that is driven off of optional
-    state.
+  @Intro(title: "最初の画面表示") {
+    TCA は親機能から子機能を提示するのに役立つ様々なツールを提供しています。
+    まず、オプショナルな状態を扱う機能について紹介します。
   }
-  
-  @Section(title: "Project set up") {
+
+  @Section(title: "プロジェクトのセットアップ") {
     @ContentAndMedia {
-      Suppose that you are working on an application that shows a list of contacts at the root, and
-      you want to add the ability to create a new contact. This should be done by tapping a "+" icon
-      in the UI, a sheet will be presented where you can enter the contact's info, and then tapping
-      a button will dismiss the sheet and add the contact to the list.
-      
+      連絡先リストを Root ビューに表示するアプリケーションを作成し、新しく連絡先を追加できる機能を追加します。
+      "+" ボタンをタップすると連絡先情報を入力するシートを表示し、ボタンがタップされるとシートを閉じ、連絡先をリストに追加します。
+
       @Image(source: "ch02-sub01-sec01-image-0001")
     }
-    
+
     @Steps {
       @Step {
-        We will start by creating a new file, ContactsFeature.swift, and we will get the very basics
-        of our contacts feature in this file. Currently that consists of a simple `Contact` model
-        data type, and a simple reducer with a collection of contacts, and a single action for when
-        the "+" button is tapped. Currently that action is not yet implemented.
-        
-        > Note: We conform `State` to the `Equatable` protocol in order to test this feature later.
+        `ContactsFeature.swift` という新しいファイルを作成し、連絡先機能の土台を作ります。
+        `Contact` データモデル、連絡先のコレクションを持つ Reducer 、 "+" ボタンタップ時の単一アクションは定義していますが、 Action に紐づくロジックは未実装です。
+
+        > Note: 後でテストするために `State` を `Equatable` プロトコルに準拠させています。
 
         @Code(name: "ContactsFeature.swift", file: 02-01-01-code-0000.swift)
       }
-      
+
       @Step {
-        Add a view that holds onto a ``ComposableArchitecture/Store`` of the `ContactsFeature`
-        and observes the store in order to show a list of contacts and send actions.
-        
+        `ContactsFeature` の ``ComposableArchitecture/Store``を保持し、 Store を監視して連絡先リストを表示し、 Action を送信するビューを追加します。
+
         @Code(name: "ContactsFeature.swift", file: 02-01-01-code-0001.swift, reset: true)
       }
-      
+
       @Step {
-        Add a preview with a few stubbed contacts already in the state so that we can see what
-        the feature looks like.
-        
+        連絡先のスタブを初期状態に指定することで、プレビューで機能を確認します。
+
         @Code(name: "ContactsFeature.swift", file: 02-01-01-code-0002.swift, reset: true) {
           @Image(source: "ch02-sub01-sec01-image-0001")
         }
       }
-      
+
       @Step {
-        Create a new file, AddContactFeature.swift, that will hold the reducer and view for the
-        feature that allows us to enter the name of a new contact. The feature will have a "Cancel"
-        button for dismissing, and a "Save" button that when tapped should dismiss the feature
-        _and_ add the contact to the list of contacts in the parent.
-        
-        > Note: There is nothing to do in the `cancelButtonTapped` and `saveButtonTapped` actions
-        > right now. They will be implemented later.
-        
+        `AddContactFeature.swift` ファイルを作成し、新しい連絡先の入力機能の Reducer とビューを定義します。
+        この機能には、連絡先の入力シートを閉じる "Cancel" ボタンと、親ビューの連絡先リストに連絡先を追加し、入力シートを閉じる "Save" ボタンを定義します。
+
+        > Note: `cancelButtonTapped` と `saveButtonTapped` アクションを受け取った際の振る舞いは後で実装します。
+
         @Code(name: "AddContactFeature.swift", file: 02-01-01-code-0003.swift, reset: true)
       }
-      
+
       @Step {
-        Add a view that holds onto a ``ComposableArchitecture/Store`` of the `AddContactFeature`.
-        Since our view is going to have a text field, we will need to be able to derive bindings
-        from the store. To do this we use the `@Bindable` property wrapper from SwiftUI.
-        
-        > Note: If you are targeting older platforms and do not have access to `@Bindable`, you can
-        > instead use `@Perception.Bindable`, which comes with the library.
+        `AddContactFeature` の ``ComposableArchitecture/Store`` を保持するビューを追加します。
+        SwiftUI の `@Bindable` プロパティラッパーを用いて、ビューに配置する TextField と Store で値をバインドできるようにします。
+
+        > Note: ターゲットとするプラットフォームが古く `@Bindable` を使用できない場合は TCA ライブラリの `@Perception.Bindable` を使用してください。
 
         @Code(name: "AddContactFeature.swift", file: 02-01-01-code-0004.swift, reset: true)
       }
-      
+
       @Step {
-        Add a form to the view with a text field for editing the name of the contact. We can
-        use the dynamic member lookup on `$store` to describe what piece of state you want to
-        drive the binding, and then you can use the `sending` method to describe which action 
-        you want to send when the binding is written to.
-        
-        > Note: See <doc:Bindings> for more information on using bindings in the Composable 
-        Architecture.
-        
+        連絡先を編集するための TextField を配置した Form をビューに追加します。
+        `$store` の Dynamic Member Lookup を用いてビューとバインドさせる Store の状態を指定し、 `sending` メソッドで値が入力された時に送信するアクションを指定します。
+
+        > Note: TCA のバインド機構については <doc:Bindings> を参照してください。
+
         @Code(name: "AddContactFeature.swift", file: 02-01-01-code-0005.swift)
       }
-      
+
       @Step {
-        Add a "Save" and "Cancel" button to the view and send the corresponding actions when those
-        buttons are tapped.
-        
+        ビューに "Save" ボタンと "Cancel" ボタンを追加し、ボタンタップ時に送信するアクションを指定します。
+
         @Code(name: "AddContactFeature.swift", file: 02-01-01-code-0006.swift)
       }
-      
+
       @Step {
-        Add a preview so that we can see what the feature looks like. 
-        
+        プレビューを追加し、動作を確認します。
+
         @Code(name: "AddContactFeature.swift", file: 02-01-01-code-0007.swift, reset: true) {
           @Image(source: "ch02-sub01-sec01-image-0002")
         }
       }
     }
   }
-  
-  @Section(title: "Integrate reducers") {
+
+  @Section(title: "Reducer の統合") {
     @ContentAndMedia {
-      Now that we have our two isolated features built, it is time to integrate them together so
-      that you can navigate to the "Add Contact" screen from the contacts list screen. To do this we
-      will first integrate the features' reducers, which consists of utilizing
-      ``ComposableArchitecture/Presents()`` and ``ComposableArchitecture/PresentationAction``
-      to integrate the domains, and the reducer operator
-      ``ComposableArchitecture/Reducer/ifLet(_:action:destination:fileID:filePath:line:column:)-4ub6q`` to
-      integrate the reducers.
+      連絡先の表示と入力という、2つの独立した機能を構築したので連絡先リスト画面から連絡先追加画面に遷移できるように Reducer を統合しましょう。
+      ``ComposableArchitecture/Presents()`` と ``ComposableArchitecture/PresentationAction`` を用いたドメイン(State と Action)の統合と、 Reducer の ``ComposableArchitecture/Reducer/ifLet(_:action:destination:fileID:filePath:line:column:)-4ub6q`` 演算子を用いた Reducer の統合が必要です。
     }
-    
+
     @Steps {
       @Step {
-        We will start by integrating the features together at the reducer level. This takes a 
-        few steps. Go back to the ContactsFeature.swift file where we built the `ContactsFeature`
-        reducer for handling the logic and behavior of the list of contacts.
-        
+        まずはドメインを統合します。
+        連絡先リストのロジックと振る舞いを定義する `ContactsFeature` Reducer を記述した `ContactsFeature.swift` ファイルに戻りましょう。
+
         @Code(name: "ContactsFeature.swift", file: 02-01-02-code-0000.swift)
       }
-       
+
       @Step {
-        Integrate the features' states together by using the ``ComposableArchitecture/Presents()``
-        macro to hold onto an optional value.
-        
-        A `nil` value represents that the "Add Contact" feature is not presented, and a non-`nil`
-        value represents that it is presented.
-        
+        まず、2つの機能の State を統合するために ``ComposableArchitecture/Presents()`` マクロを用いてオプショナルな状態を定義します。
+
+        連絡先追加画面が表示されていない場合は `nil` 、 表示されている場合は `nil` でない値をセットします。
+
         @Code(name: "ContactsFeature.swift", file: 02-01-02-code-0001.swift)
       }
-       
+
       @Step {
-        Integrate the feature's actions together by adding a case that holds onto a
-        ``ComposableArchitecture/PresentationAction``. 
-        
-        This allows the parent to observe every action sent from the child feature.
-        
+        次は、 Action を統合するために ``ComposableArchitecture/PresentationAction`` を保持するケースを追加します。
+
+        親機能は、子機能から送信されるすべての Action を監視できるようになりました。
+
         @Code(name: "ContactsFeature.swift", file: 02-01-02-code-0002.swift)
       }
-       
+
       @Step {
-        Since a new case has been added to the action enum we must now handle it in the main
-        reducer. For now we will do nothing for this case and return `.none`, but soon we will do
-        more here.
-        
+        Action 列挙型にケースを追加したので、親 Reducer では新しく追加した Action を処理する必要があります。
+        現時点では何もせず`.none`を返すようにしていますが、ロジックは後で追加します。
+
         @Code(name: "ContactsFeature.swift", file: 02-01-02-code-0003.swift)
       }
-       
+
       @Step {
-        Integrate the reducers together by making use of the
-        ``ComposableArchitecture/Reducer/ifLet(_:action:destination:fileID:filePath:line:column:)-4ub6q``
-        reducer operator.
-        
-        This creates a new reducer that runs the child reducer when a child 
-        action comes into the system, and runs the parent reducer on all actions. It also 
-        automatically handles effect cancellation when the child feature is dismissed, and a lot
-        more. See the documentation for more information.
-        
+        最後に、 Reducer を統合するために ``ComposableArchitecture/Reducer/ifLet(_:action:destination:fileID:filePath:line:column:)-4ub6q`` 演算子を使用します。
+
+        システムが子 Action を受信した場合は子 Reducer を実行し、すべてのアクションで親 Reducer を実行する単一の Reducer を定義しました。
+        この演算子は、子機能のビューが閉じられた場合は Effect をキャンセルするなど、多くのことを自動的に処理します。
+        詳細については、ドキュメントを参照してください。
+
         @Code(name: "ContactsFeature.swift", file: 02-01-02-code-0004.swift)
       }
-      
-      That is all it takes to integrate the two features' domains together. Before moving onto the
-      view, we can start flexing some of the muscles that the library gives us. Because the two
-      features are so tightly integrated together we can now easily implement the presentation and
-      dismissal of the "Add Contact" feature.
-      
+
+      2つの機能のドメインと Reducer を1つに統合したため、連絡先追加画面の表示と非表示が簡単に実装できるようになりました。
+      ここで、ビューの実装に移る前にライブラリが提供する機能について紹介します。
+
       @Step {
-        When the "+" button is tapped in the contacts list feature we can now populate the 
-        `addContact` state to represent that the feature should be presented.
-        
+        連絡先リスト画面で "+" ボタンがタップされたときに連絡先追加画面を表示するため、 `addContact` に状態をセットします。
+
         @Code(name: "ContactsFeature.swift", file: 02-01-02-code-0005.swift)
       }
-      
+
       @Step {
-        When the "Cancel" button is tapped _inside_ the "Add Contacts" feature we want to dismiss
-        the feature and do nothing else. This can be accomplished by simply `nil`-ing out the 
-        `addContact` state.
-        
-        > Note: We are destructuring on the 
-        > ``ComposableArchitecture/PresentationAction/presented(_:)`` case in order to listen for 
-        > actions inside the "Add Contact" feature.
-        
+        連絡先追加画面で "Cancel" ボタンがタップされたときは、 `addContact` に `nil` をセットして画面を閉じます。
+
+        > Note: 連絡先追加機能の Action を受信するために ``ComposableArchitecture/PresentationAction/presented(_:)`` ケースを経由しています。
+
         @Code(name: "ContactsFeature.swift", file: 02-01-02-code-0006.swift)
       }
-      
+
       @Step {
-        When the "Save" button is tapped _inside_ the "Add Contacts" feature we want to not only
-        dismiss the feature, but we also want to add the new contact to the collection of contacts
-        held in `ContactsFeature.State`.
-        
+        連絡先追加画面で "Save" ボタンがタップされたときは画面を閉じ、入力された連絡先を `ContactsFeature.State` で保持する連絡先のコレクションに追加します。
+
         @Code(name: "ContactsFeature.swift", file: 02-01-02-code-0007.swift)
       }
-      
-      That is all it takes to implement communication between parent and child features. The parent
-      feature can create state in order to drive navigation, and the parent feature can listen for
-      child actions to figure out what additional logic it wants to layer on. Next we need to
-      integrate the views together.
+
+      親機能で子機能の状態を定義することで画面遷移を表現し、子 Action を受信して親子機能間でやり取りができるようになりました。
+      では、親機能と子機能のビューを統合していきましょう。
     }
   }
-    
-  @Section(title: "Integrate views") {
+
+  @Section(title: "ビューの統合") {
     @ContentAndMedia {
-      Now that we have integrated the domain and reducers of the two features we must integrate
-      their views. In particular, we will present an `AddContactView` from the `ContactsView`.
+      `ContactsView` から `AddContactView` を表示するように変更します。
     }
-    
+
     @Steps {
       @Step {
-        Recall that view currently looks like this. It is a simple list with a row for each contact,
-        and we have a navigation title and toolbar. We need to figure out how to present a sheet
-        in this view whenever the `addContact` state flips to non-`nil`.
-        
+        現在の連絡先リストのビューは各行に連絡先を表示するシンプルなリストで、ナビゲーションタイトルとツールバーを表示しています。
+        `addContact` に `nil` 以外の値がセットされた場合はシートを表示するようにします。
+
         @Code(name: "ContactsFeature.swift", file: 02-01-02-code-0008.swift, reset: true)
       }
-      
-      The library comes with a variety of tools that mimic SwiftUI's native navigation tools (such
-      as sheets, popovers, fullscreen covers, alerts, and confirmation dialogs), but they take
-      ``ComposableArchitecture/Store``s instead of bindings.
-      
+
+      TCA ライブラリには SwiftUI ネイティブの画面遷移ツール(Sheet, Popover, 全画面表示, Alert, 確認ダイアログなど)を模倣した様々なツールが用意されており、 ``ComposableArchitecture/Store``を用いて Reducer とビューをバインドする Store を定義します。
+
       @Step {
-        Use the `@Bindable` property wrapper to derive a binding to a store, which can be scoped
-        down to just the presentation domain of the `addContact` feature, and passed to the
-        `sheet(item:)` view modifier. When the `addContact` state becomes non-`nil`, a new store
-        will be derived focused only on the `AddContactFeature` domain, which is what you can pass
-        to the `AddContactView`.
-        
-        > Note: If you are targeting older platforms and do not have access to `@Bindable`, you can
-        > instead use `@Perception.Bindable`, which comes with the library.
-        
+        `@Bindable` プロパティラッパーを用いてビューに Store をバインドできるようにし、子機能の `addContact` にスコープを絞った Store を `sheet(item:)` ビュー修飾子に渡します。
+        親 Reducer の `addContact` に `nil` 以外の値がセットされると、子機能の `AddContactFeature` ドメインにスコープが限定された Store が `AddContactView` に渡されます。
+
+        > Note: 古いプラットフォームをターゲットにしていて `@Bindable` を使用できない場合は TCA ライブラリが提供する `@Perception.Bindable` を使用してください。
+
         @Code(name: "ContactsFeature.swift", file: 02-01-02-code-0009.swift)
       }
-      
+
       @Step {
-        Run the app in the preview to show that it works as expected. Tapping the "+" icon brings up
-        the "AddContactFeature" in a sheet, and tapping "Save" adds a new contact to the list, 
-        whereas tapping "Cancel" does not.
-        
+        プレビューで期待通りに動作することを確認します。
+        "+" ボタンをタップすると "AddContactFeature" のシートが表示され、 "Save" ボタンをタップすると新しい連絡先がリストに追加され、 "Cancel" ボタンをタップした場合は連絡先が追加されません。
+
         @Video(source: "ch02-sub01-sec03-image-0000") 
       }
     }
   }
-    
-  @Section(title: "Child-to-parent communication") {
+
+  @Section(title: "子から親への通信") {
     @ContentAndMedia {
-      In the previous sections we facilitated child-to-parent communication by having the parent 
-      reducer inspect the actions in the child so that we could determine when the "Save" and 
-      "Cancel" buttons were tapped. This is not ideal since it may lead to the parent making 
-      assumptions about what logic it should perform when something happens in the child feature.
-      
-      A better pattern is to use so-called "delegate actions" for the child feature to directly tell
-      the parent what it wants done.
+      前のセクションでは、親 Reducer が子 Reducer から送信された Action(子画面の "Save" ボタンと "Cancel" ボタンのタップ) に応じてロジックを分岐していました。
+      しかし、子機能から送信される Action に対して、親機能が取り扱う状態や自身のロジックを予想して処理を行っている点には改善の余地があります。
+
+      デリゲートアクションを用いて、子機能が親機能に直接処理を指示できるようにしましょう。
     }
-    
+
     @Steps {
       @Step {
-        Go to AddContactFeature.swift and add a new `Delegate` action enum to the 
-        `AddContactFeature`. This enum will describe all the actions that the parent can listen for
-        and interpret. It allows the child feature to directly tell the parent what it wants done.
-        
+        `AddContactFeature.swift` に移動し、 `AddContactFeature` に `Delegate` 列挙型を追加し、親機能に送信するすべてのアクションを記述します。
+
         @Code(name: "AddContactFeature.swift", file: 02-01-04-code-0000.swift, previousFile: 02-01-04-code-0000-previous.swift)
       }
-      
-      > Important: Delegate actions are the most general way of communicating from the child domain
-      back to the parent, but there are other techniques. We could have also utilized the 
-      [`@Shared`](<doc:Shared>) property wrapper for the collection of sync ups, which would allow
-      the `AddContactFeature` to insert a new contact directly into the parent collection without
-      any further steps. This can be powerful, but we will use delegate actions for this tutorial.
-      To read more about `@Shared` see the <doc:SharingState> article, and see the
-      <doc:BuildingSyncUps> tutorial where we use this technique, in particular in
-      <doc:EditingAndDeletingSyncUp#Deleting-the-sync-up> section.
-      
+
+      > Important: 他にも [`@Shared`](<doc:Shared>) プロパティラッパーを用いて親ドメインの状態(連絡先コレクション)を子ドメインが直接操作できるようにする方法があります。
+      > デリゲートアクションは子ドメインから親ドメインに通信するための最も一般的な方法なので、このチュートリアルではデリゲートアクションを使用しています。
+      > `@Shared`についての詳細は <doc:SharingState> を参照し、チュートリアル <doc:BuildingSyncUps> の <doc:EditingAndDeletingSyncUp#Deleting-the-sync-up> セクションを参照してください。
+
       @Step {
-        Handle the new case in the reducer, but we should never actually perform any logic in this
-        case. Only the parent should listen for `delegate` actions and respond accordingly.
-        
+        子 Reducer の `delegate` ケースではロジックを実行せず、親 Reducer で `delegate` アクションを処理するようにします。
+
         @Code(name: "AddContactFeature.swift", file: 02-01-04-code-0001.swift)
       }
-      
+
       @Step {
-        Anytime we want the child feature to communicate to the parent we will return an effect that
-        immediately and synchronously sends a delegate action. For example, when the "Save" button
-        is tapped, we will send the `saveContact` action.
-        
+        子機能は、親に対して即時的かつ同期的にデリゲートアクションを送信する Effect を返すようにします。
+        例えば、 "Save" ボタンがタップされたときは `saveContact` アクションを送信します。
+
         @Code(name: "AddContactFeature.swift", file: 02-01-04-code-0002.swift)
       }
-      
+
       @Step {
-        Go back to ContactsFeature.swift and update the reducer to listen for delegate actions to
-        figure out when it is time to dismiss or save the contact.
-        
+        `ContactsFeature.swift` に戻り、 "Cancel" ボタンと "Save" ボタンのタップ時に送信されるデリゲートアクションを受信するように親 Reducer を修正します。
+
         @Code(name: "ContactsFeature.swift", file: 02-01-04-code-0003.swift, previousFile: 02-01-04-code-0003-previous.swift)
       }
-      
-      The application should work exactly as it did before the "delegate action" refactor, but now
-      the child feature can accurately describe what it wants the parent to do rather than the
-      parent make assumptions. There is still room for improvement though. It is very common for a
-      child feature to want to dismiss itself, such as is the case when tapping "Cancel". It is too
-      cumbersome to create a delegate action just to communicate this to the parent, and so the
-      library comes with a special tool for this.
-      
+
+      これで子機能は親に伝える子自身の状態と振る舞いを正確に記述できるようになりましたが、まだ改善の余地があります。
+      "Cancel" ボタンをタップしたときのように、子機能が自身の画面を閉じるのは非常に一般的なケースであり、それを親に伝えるためだけにデリゲートアクションを定義するのは冗長なので、 TCA ライブラリには特別なツールが用意されています。
+
       @Step {
-        Go back to AddContactFeature.swift and add a dependency on 
-        ``ComposableArchitecture/DismissEffect``. This is a value that allows child features to
-        dismiss themselves without any direct contact with the parent feature.
-        
+        `AddContactFeature.swift` に戻り、親機能と直接通信することなく子機能が自身を閉じることを可能にする ``ComposableArchitecture/DismissEffect`` の依存関係を追加します。
+
         @Code(name: "AddContactFeature.swift", file: 02-01-04-code-0004.swift, previousFile: 02-01-04-code-0004-previous.swift)
       }
-      
+
       @Step {
-        Use the `dismiss` dependency by returning an effect and invoking it. This will communicate
-        with the parent in order for a ``ComposableArchitecture/PresentationAction/dismiss`` action
-        to be sent, which will clear out the state driving the presentation.
-        
-        > Note: The `dismiss` dependency is asynchronous which means it is only appropriate to 
-        > invoke from an effect.
-        
+        `dismiss` 依存関係を呼び出す Effect を実行することで、親 Reducer に ``ComposableArchitecture/PresentationAction/dismiss`` アクションが送信され、子画面を表示している状態が初期化されます。
+
+        > Note: `dismiss` 依存関係は非同期であるため、 Effect 内で呼び出します。
+
         @Code(name: "AddContactFeature.swift", file: 02-01-04-code-0005.swift)
       }
-      
+
       @Step {
-        Remove the `cancel` action from the `Delegate` enum because it is no longer needed. We do
-        not need to explicitly communicate to the parent that it should dismiss the child. That is
-        all handled by the ``ComposableArchitecture/DismissEffect``.
-        
+        ``ComposableArchitecture/DismissEffect`` によって親 Reducer に子画面を閉じる旨を明示的に伝える必要がなくなったため、 `Delegate` 列挙型から `cancel` アクションを削除します。
+
         @Code(name: "AddContactFeature.swift", file: 02-01-04-code-0006.swift)
       }
-      
+
       @Step {
-        Go back to ContactsFeature.swift. We can also remove the `cancel` logic from the 
-        `ContactsFeature` reducer and it is no longer necessary to explicitly `nil` out the
-        `addContact` state. That is already taken care of.
-        
+        `ContactsFeature.swift` に戻り、 `ContactsFeature` Reducer から `cancel` ロジックと `addContact` を明示的に `nil` で初期化していた部分を削除します。
+
         @Code(name: "ContactsFeature.swift", file: 02-01-04-code-0007.swift, previousFile: 02-01-04-code-0007-previous.swift)
       }
     }

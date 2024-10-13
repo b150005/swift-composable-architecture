@@ -1,226 +1,161 @@
 @Tutorial(time: 10) {
-  @Intro(title: "Presenting the sync-up form") {
-    We now have two features built: the sync-ups list and the sync-up form. These features do not
-    exist in isolation, but rather are meant to be integrated in a deep way. One should be able to
-    navigate to the sync-up form from the list view, enter the details of a new sync-up, and then
-    add that sync-up to the root list.
+  @Intro(title: "Sync-up フォームの表示") {
+    現在、 Sync-up リストとフォームの2機能を実装しました。
+    リスト画面からフォームに移動して詳細を入力し、 Root ビューに表示するリストに追加できるようにします。
   }
-  
-  @Section(title: "Integrating the feature domains together") {
+
+  @Section(title: "機能ドメインの統合") {
     @ContentAndMedia {
-      To present the sync-up form from the sync-ups list we first need to integrate their domains
-      together. This means the sync-ups list domain will hold onto the state and actions of the
-      sync-up form.
+      リスト画面からフォームを表示するために Sync-up リストとフォームのドメインを統合し、 Sync-up リストがフォームの State と Action を保持するように変更します。
     }
-    
+
     @Steps {
-      Go to the SyncUpsList.swift file, where the `SyncUpLists` reducer is. We are going to update
-      the `State` struct so that it holds onto the state of the child feature to be presented, 
-      which is `SyncUpForm.State`. We will do this by holding onto an optional of the child state,
-      where `nil` represents that the feature is not presented, and non-`nil` represents the feature 
-      is presented
-      
+      `SyncUpsList.swift` で定義した `SyncUpLists` Reducer の `State` 構造体を更新し、 Sync-up フォーム機能の State をオプショナルな `SyncUpForm.State` で保持します。
+      `nil` は画面が表示されていないことを表し、 `nil` でない場合は表示されていることを表します。
+
       @Step {
-        Add a field to the `State` struct to hold onto `SyncUpForm.State` as an optional. We will
-        also need to use the ``ComposableArchitecture/Presents()`` macro so that the navigation
-        tools can accomplish certain things under the hood.
-        
+        `State` 構造体にオプショナルな `SyncUpForm.State` 型のフィールドを追加します。
+        ``ComposableArchitecture/Presents()`` マクロを付与することで、子機能の状態を表現することができます。
+
         @Code(name: "SyncUpsList.swift", file: PresentingSyncUpForm-01-code-0001.swift, previousFile: PresentingSyncUpForm-01-code-0001-previous.swift)
       }
-      
+
       @Step {
-        Add a case to the `Action` enum to hold onto a `SyncUpForm.Action`. We cannot do this 
-        directly, but instead will wrap it in the ``ComposableArchitecture/PresentationAction``
-        type, which enhances the child feature's action enum with an additional 
-        ``ComposableArchitecture/PresentationAction/dismiss`` action that is sent when the user
-        dismisses the feature from the UI, such as swiping down on a sheet.
-        
+        `Action` 列挙型に ``ComposableArchitecture/PresentationAction`` 型でラップした `SyncUpForm.Action` をパラメータにとるケースを追加します。
+        `PresentationAction` 型は、ユーザが子画面を閉じたときに送信される ``ComposableArchitecture/PresentationAction/dismiss`` アクションを包含しています。
+
         @Code(name: "SyncUpsList.swift", file: PresentingSyncUpForm-01-code-0002.swift)
       }
-      
+
       @Step {
-        Since a new case was added to the `Action` enum we have to handle it in the reducer.
-        Currently there is nothing to do, but there will be more to do here soon.
-        
+        Reducer で追加した Action を受信した場合の振る舞いを実装します。
+
         @Code(name: "SyncUpsList.swift", file: PresentingSyncUpForm-01-code-0003.swift)
       }
-      
-      The state and actions of the two features are now integrated together. Next we need to 
-      integrate the logic and behavior of the features by composing the reducers together.
-      
-      The way one integrates an optional child feature into a parent feature is via the 
-      ``ComposableArchitecture/Reducer/ifLet(_:action:destination:fileID:filePath:line:column:)-4ub6q``
-      reducer operator. It allows you to single out the presentation domain of a child feature
-      embedded in the parent feature, and then specify the child reducer to run on that domain. It
-      also takes care of a lot of logic for you under the hood, such as the ordering of when the
-      child and parent reducers run, automatically cancelling child effects when its dismissed, and
-      gives you access to the ``DismissEffect`` dependency that allows a child feature to dismiss
-      itself without communicating with the parent.
-      
+
+      Sync-up リストとフォーム機能の State と Action を統合しました。
+      次に、機能のロジックと振る舞いを表す Reducer を統合します。
+
+      ``ComposableArchitecture/Reducer/ifLet(_:action:destination:fileID:filePath:line:column:)-4ub6q`` 演算子を用いてオプショナルな子機能を親機能に統合します。
+      `ifLet` 演算子は、親機能に統合された子機能のプレゼンテーションドメインを特定し、そのドメインで実行する子 Reducer を指定できます。
+      また、子と親の Reducer の実行順序や子画面が閉じられたときの Effect の自動キャンセルなど、多くのロジックを内部的に処理し、子が親と連携せずに子画面を閉じることができる ``DismissEffect`` 依存関係を参照できるようになります。
+
       @Step {
-        Use the `ifLet` operator by specifying key paths to the `addSyncUp` presentation state
-        and `addSyncUp` presentation action.
-        
+        `ifLet` 演算子を使用して `addSyncUp` の State と Action への KeyPath を指定します。
+
         @Code(name: "SyncUpsList.swift", file: PresentingSyncUpForm-01-code-0004.swift)
       }
-      
+
       @Step {
-        We can now properly implement the `addSyncUpButtonTapped` action, which previously we left 
-        blank. All we have to do is populate the `addSyncUp` state, and let the view take care of
-        observing that the state is non-`nil` and presenting the form.
-        
+        `addSyncUpButtonTapped` アクション受信時に `addSyncUp` に `nil` でない値をセットし、 State を監視するビューがフォームを表示するようにします。
+
         @Code(name: "SyncUpsList.swift", file: PresentingSyncUpForm-01-code-0005.swift)
       }
-      
-<!--      Let's also be proactive in controlling our dependencies from the beginning. We see that we -->
-<!--      are generating a new UUID from scratch when creating the `SyncUp`, so let's go ahead and use-->
-<!--      the `\.uuid` dependency.-->
-<!--      -->
-<!--      @Step {-->
-<!--        Add the `\.uuid` dependency to the feature and use it instead of generating -->
-<!--      }-->
-      
-      That is all it takes to integrate two features together using the tools from the 
-      Composable Architecture. Notice that we have not yet mentioned _how_ we want the 
-      `SyncUpFormView` to be presented, _e.g._ as a sheet, popover, full-screen cover, or something
-      else? The reducer does not care about that detail. It only cares about the domain modeling of
-      the optional feature. You do not need to decide the _type_ of navigation until you implement
-      the view layer.
+
+      しかし、まだ `SyncUpFormView` はシートやポップオーバー、全画面表示など、どのように表示するか指定していません。
+      Reducer はオプショナルな子機能のドメインモデリングのみを扱うため、画面遷移の形式はビュー側で実装します。
     }
   }
-  
-  @Section(title: "Integrating the feature views together") {
+
+  @Section(title: "機能とビューの統合") {
     @ContentAndMedia {
-      Now that the `SyncUpsList` and `SyncUpForm` reducers are integrated together we need to
-      integrate the feature views together. This can be done using the various navigation view 
-      modifiers that SwiftUI ships with.
+      `SyncUpsList` と `SyncUpForm` の Reducer を統合したので、次は SwiftUI のナビゲーションビュー修飾子を用いて機能とビューを統合します。
     }
-    
+
     @Steps {
-      Let's present the "Add sync-up" feature in a sheet. It could also be done in a full-screen
-      cover, or any number of navigation styles, but we will start with a sheet.
-      
+      "Add sync-up" 機能をシートで表示します。全画面表示や他の画面遷移形式も使用可能ですが、ここではシートで表示します。
+
       @Step {
-        We would like to use the native SwiftUI navigation view modifier, `sheet(item:)`, but it
-        takes a binding to some optional identifiable state that represents if the sheet is being
-        shown.
-        
+        SwiftUI ネイティブのナビゲーションビュー修飾子である `sheet(item:)` は、子画面の Identifiable な オプショナルの `Binding` 値をパラメータに取ります。
+
         @Code(name: "SyncUpsList.swift", file: PresentingSyncUpForm-02-code-0001.swift, previousFile: PresentingSyncUpForm-02-code-0001-previous.swift)
       }
-      
-      But, how do we derive this binding?
-      
-      Luckily the library comes with the tools necessary. Just as there is a scoping operation on
-      stores for focusing on sub-domains of a parent domain, there is also a scope on _bindings_ of
-      stores for doing the same: ``SwiftUI/Binding/scope(state:action:fileID:filePath:line:column:)``. This tool can
-      be used to derive a binding that is appropriate to pass to `sheet(item:)`.
-      
+
+      Reducer から子機能の Store を `Binding` 型として抽出できるよう、 TCA ライブラリは ``SwiftUI/Binding/scope(state:action:fileID:filePath:line:column:)`` 演算子を提供しています。
+
       @Step {
-        Since we want to derive bindings from the store we need to decorate the property in the view
-        with the `@Bindable` property wrapper.
-        
-        > Note: Remember that if the `@Bindable` property wrapper is not available to you due to
-        > platform restrictions you can instead use the library's `@Perception.Bindable` property
-        > wrapper.
-        
+        Store を `Binding` 型として変換するため、ビューの `store` プロパティに `@Bindable` プロパティラッパーを付与します。
+
+        > Note: プラットフォームの制約によって `@Bindable` プロパティラッパーが利用できない場合は、 TCA ライブラリの `@Perception.Bindable` プロパティラッパーを使用します。
+
         @Code(name: "SyncUpsList.swift", file: PresentingSyncUpForm-02-code-0002.swift)
       }
-      
+
       @Step {
-        Use the ``SwiftUI/Binding/scope(state:action:fileID:filePath:line:column:)`` operator on `$store` to focus
-        the binding to the presentation domain of the `SyncUpForm`. The `sheet(item:)` modifier will
-        hand the trailing closure a `StoreOf<SyncUpForm>`, and that is exactly what can be handed to
-        the `SyncUpFormView`.
-        
+        `$store` に ``SwiftUI/Binding/scope(state:action:fileID:filePath:line:column:)`` 演算子を用いて `SyncUpForm` のプレゼンテーションドメインにスコープを限定した `Binding` 値を抽出します。
+        `sheet(item:)` 修飾子によって Trailing closure に渡された `StoreOf` オブジェクトを `SyncUpFormView` にそのまま渡すことができます。
+
         @Code(name: "SyncUpsList.swift", file: PresentingSyncUpForm-02-code-0003.swift)
       }
-      
-      That's all it takes in the view layer. It's a simple matter of annotating the store property
-      with `@Bindable`, using the `scope` operator on bindings to deriving stores for the child
-      domain, and hand that over to `sheet(item:)`.
-      
+
+      ビューの `store` プロパティに `@Bindable` アノテーションを付与することで `Binding` 型への変換を可能にするとともに `scope` 演算子を用いて抽出した子ドメインの Store を `sheet(item:)` に渡すことでビューを統合しました。
+
       @Step {
-        Run the app in the preview or simulator to see that it basically works. If we tap the "+"
-        button to see that a sheet with the form comes up. And you can swipe down on the sheet to
-        dismiss it.
-        
+        プレビューまたはシミュレータでアプリケーションを実行します。
+        "+" ボタンをタップすると Sync-up フォームシートが表示され、シートを下にスワイプして閉じることもできます。
+
         @Video(source: PresentingSyncUpForm-02-video-0004.mov)
       }
-      
-      We can also replace `sheet(item:)` with `popover(item:)`, `fullScreenCover(item:)`, or any
-      other SwiftUI view modifier that deals with bindings of optionals to drive navigation.
+
+      また、 `sheet(item:)` の部分は `popover(item:)` や `fullScreenCover(item:)` 、またはオプショナルな `Binding` 値をパラメータにとり画面遷移を行う他の SwiftUI ビュー修飾子に置き換えることもできます。
     }
   }
-    
-  @Section(title: "Adding a new sync-up to the list") {
+
+  @Section(title: "リストへの Sync-up の追加") {
     @ContentAndMedia {
-      We have now integrated the `SyncUpsList` and `SyncUpForm` features together, both at the
-      domain level and the view layer. But there is more to their integration. We need to add a 
-      button to the form sheet that allows the user to actually create the sync-up and add it to the
-      root list.
-      
-      This can be done in a few ways. We could add the button directly in `SyncUpFormView`, but
-      that could complicate reusing the view, which we will be doing for the editing flow of a sync
-      up. Instead, we will make it the responsibility of the parent to adorn the child view with
-      toolbar buttons for saving and discarding the form data.
+      `SyncUpsList` と `SyncUpForm` の2つの機能をドメイン(State と Action を含む Reducer)とビューの両方で統合しました。
+      最後に、フォームシートで入力した Sync-up を Root ビューのリストに追加するボタンを配置します。
+
+      `SyncUpFormView` に直接ボタンを追加してしまうと登録と編集の2つの場面で再利用する際に複雑なプレゼンテーションロジックが必要となるため、親ビューでツールバーを配置しフォームデータの保存と破棄を行えるようにします。
     }
-    
+
     @Steps {
       @Step {
-        Go to the SyncUpsList.swift file, and wrap the `SyncUpFormView` in a navigation stack so 
-        that we can add toolbar buttons. Also add buttons for adding and discarding the new sync-up, 
-        as well as a title.
-        
+        `SyncUpsList.swift` に移動し、 `SyncUpFormView` を `NavigationStack` でラップして、ツールバーを追加します。
+        Sync-up の追加と破棄を行うツールバーとナビゲーションタイトルを追加します。
+
         @Code(name: "SyncUpsList.swift", file: PresentingSyncUpForm-03-code-0001.swift, previousFile: PresentingSyncUpForm-03-code-0001-previous.swift)
       }
-      
-      We can now more clearly see why we would want this view logic in the parent and not the child.
-      The title "New sync-up" is domain specific to this situation right here, and would not be
-      appropriate when we start showing this view for editing an existing sync-up. So, we would need
-      extra logic in the child view to separately handle adding versus editing a sync-up. By moving
-      it to the parent we can simplify things.
-      
-      Right now the toolbar buttons don't do anything when tapped, so let's send actions to the
-      store.
-      
+
+      "New sync-up" というナビゲーションタイトルは新規登録の場面に固有のものであり、編集時に表示するのは不適切です。
+      子ビューである `SyncUpForm` で定義してしまうと、登録時と編集時でプレゼンテーションロジックを分ける必要が生じてしまいます。
+
+      まだツールバーをタップしても何も起こらないため、 Store に Action を送信しましょう。
+
       @Step {
-        Send an action to the store in each button of the toolbar.
-        
-        > Note: These actions are not added to the domain yet and will cause a compiler error. We
-        > will fix that next.
-        
+        ツールバーの各ボタンで Store に Action を送信します。
+
+        > Note: これらの Action はまだドメインに追加していないため、コンパイラエラーが発生します。
+
         @Code(name: "SyncUpsList.swift", file: PresentingSyncUpForm-03-code-0002.swift)
       }
-      
-      We are now sending new actions to the store, and so we have to add those actions to our
-      feature and implement their logic.
-      
+
+      Store に Action を送信しているので、これらの Action を機能に追加し、 Reducer の振る舞いを実装します。
+
       @Step {
-        Add two cases to the `Action` enum of the `SyncUpsList` reducer that represents confirming
-        the addition of the new sync-up or discarding it.
-        
+        `SyncUpsList` Reducer の `Action` 列挙型に、 Sync-up の登録承認アクションと入力中のデータの破棄アクションを追加します。
+
         @Code(name: "SyncUpsList.swift", file: PresentingSyncUpForm-03-code-0003.swift, previousFile: PresentingSyncUpForm-03-code-0003-previous.swift)
       }
-      
+
       @Step {
-        Implement the logic for the `confirmAddButtonTapped` action. We will unwrap the `addSyncUp`
-        optional state, and append its sync-up data to the `syncUps` array. We also need to `nil`
-        out the `addSyncUp` state in order to dismiss the sheet.
-        
+        `confirmAddButtonTapped` アクション受信時のロジックを実装します。
+        オプショナルな `addSyncUp` をアンラップし、入力された Sync-up を `syncUps` 配列に追加します。
+        また、シートを閉じるために `addSyncUp` に `nil` をセットします。
+
         @Code(name: "SyncUpsList.swift", file: PresentingSyncUpForm-03-code-0004.swift)
       }
-      
+
       @Step {
-        Implement the logic for the `discardButtonTapped` action by simply `nil`-ing out the 
-        `addSyncUp` state to dismiss the sheet. Nothing else needs to be done.
-        
+        `discardButtonTapped` アクション受信時のロジックを実装します。
+        シートを閉じるために `addSyncUp` に `nil` をセットします。
+
         @Code(name: "SyncUpsList.swift", file: PresentingSyncUpForm-03-code-0005.swift)
       }
-      
+
       @Step {
-        Run the feature in the preview to show that it is possible to complete the full flow of
-        bringing up the "Add sync-up" sheet and adding a sync-up to the root list.
-        
+        プレビューを実行して "Add sync-up" シートを表示し、 Root ビューで表示するリストに Sync-up を追加できることを確認します。
+
         @Video(source: "PresentingSyncUpForm-03-code-0006.mov")
       }
     }

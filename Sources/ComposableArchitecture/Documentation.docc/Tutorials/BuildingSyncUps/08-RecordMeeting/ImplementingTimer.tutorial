@@ -1,506 +1,413 @@
 @Tutorial(time: 25) {
-  @Intro(title: "Adding a meeting timer") {
-    The first major piece of logic and behavior we will introduce to the record meeting feature is
-    the timer. This is a long-living effect that runs in parallel with the rest of the feature, and
-    we need to implement nuanced logic to figure out when to proceed to the next speaker. 
+  @Intro(title: "ミーティングタイマーの導入") {
+    ミーティング記録機能にタイマーのロジックと振る舞いを導入します。
+    タイマーは長時間並列実行する Effect であり、次の話者に移るタイミングを判定するロジックを実装する必要があります。
   }
-  
-  @Section(title: "A basic timer") {
+
+  @Section(title: "基本的なタイマー") {
     @ContentAndMedia {
-      Let's start with getting the very basics of a timer into place. This will be the first time
-      we have dealt with an effect that emits actions back into the system, as the only other 
-      effect dealt with so far was the `dismiss` effect for dismissing a feature.
+      タイマーによってシステムにアクションを送信する Effect を初めて扱うことになります。
+      これまで扱った唯一の Effect は、機能を閉じるための `dismiss` Effectでした。
     }
-    
+
     @Steps {
-      In order to start an effect we need an action to kick off the process. One can use either
-      SwiftUI's `onAppear` or `task` view modifiers.
-      
+      Effect を開始するには、 SwiftUI の `onAppear` または `task` ビュー修飾子のいずれかを用いてプロセスを開始するアクションを送信します。
+
       @Step {
-        Add an `onAppear` action to the `RecordMeeting.Action` enum and send it from the view.
-        
-        > Note: Be sure to scroll down in the code snippet to see that we are sending the action
-        from the view.
-        
+        `RecordMeeting.Action` 列挙型に `onAppear` アクションを追加し、ビューから送信します。
+
+        > Note: コードスニペットを下にスクロールすると、ビューからアクションを送信していることがわかります。
+
         @Code(name: "RecordMeeting.swift", file: ImplementingTimer-01-code-0001.swift, previousFile: ImplementingTimer-01-code-0001-previous.swift)
       }
-      
+
       @Step {
-        Add a `body` property to the reducer, and stub out a `Reduce` for us to implement the 
-        logic and behavior of the feature.
-        
+        Reducer に `body` プロパティを追加し、機能のロジックと振る舞いを定義する `Reduce` の土台を作成します。
+
         @Code(name: "RecordMeeting.swift", file: ImplementingTimer-01-code-0002.swift)
       }
-      
-      In the `onAppear` action we want to start up a long-living effect that represents a timer.
-      Timers can be easily handled using an asynchronous context, and the 
-      ``ComposableArchitecture/Effect/run(priority:operation:catch:fileID:filePath:line:column:)`` helper is
-      what gives us an asynchronous context to work in.
-      
+
+      `onAppear` アクションではタイマーを長期実行する Effect を開始します。
+      タイマーは ``ComposableArchitecture/Effect/run(priority:operation:catch:fileID:filePath:line:column:)`` ヘルパーによって提供される非同期コンテキスト内で処理されます。
+
       @Step {
-        Return a `.run` effect from the `onAppear` action in order to create an asynchronous
-        context to perform work in.
-        
+        `onAppear` アクション受信時は `.run` Effect を返し、タイマーを実行するための非同期コンテキストを作成します。
+
         @Code(name: "RecordMeeting.swift", file: ImplementingTimer-01-code-0003.swift)
       }
-      
+
       @Step {
-        In the asynchronous context perform an infinite `while` loop with a 1 second `Task.sleep`
-        inside.
-        
+        非同期コンテキスト内で1秒ごとに無限に繰り返される `Task.sleep` を実行します。
+
         @Code(name: "RecordMeeting.swift", file: ImplementingTimer-01-code-0004.swift)
       }
-      
-      This is a very crude way to create a timer, but it will suit our needs for the time being.
-      
-      After each `Task.sleep` finishes we want to send an action back into the system to let the
-      feature know the timer ticked, which will allow us to execute additional logic. To do this we
-      must first add a new action that can be sent from the effect.
-      
+
+      作りは粗いですが、タイマーを作成しました。
+
+      `Task.sleep` の発火ごとに追加ロジックを実行するために、 Effect からシステムに送信するアクションを追加します。
+
       @Step {
-        Add a `timerTick` to the feature's domain that represents when a second passes in the timer.
-        
+        ドメインに `timerTick` を追加して、タイマーで1秒が経過したことをアクションとして定義します。
+
         @Code(name: "RecordMeeting.swift", file: ImplementingTimer-01-code-0005.swift)
       }
-      
+
       @Step {
-        Send the `timerTick` action from the effect after the task sleeps for one second.
-        
+        タスクが1秒間待機した後、 Effect を通じて `timerTick` アクションを送信します。
+
         @Code(name: "RecordMeeting.swift", file: ImplementingTimer-01-code-0006.swift)
       }
-      
-      We have now effectively created a timer in our feature. After the view appears, the reducer
-      will receive a `timerTick` action every second. And it's in that action we can start layering
-      on some of our feature's logic.
-      
+
+      機能にタイマーを導入したため、ビューの表示後に Reducer は1秒ごとに `timerTick` アクションを受信するようになり、`timerTick` アクション受信時のロジックを実行できるようになりました。
+
       @Step {
-        Increment the `secondsElapsed` state when the `timerTick` button is tapped.
-        
+        `timerTick` ボタンタップ時に `secondsElapsed` をインクリメントします。
+
         @Code(name: "RecordMeeting.swift", file: ImplementingTimer-01-code-0007.swift)
       }
-      
+
       @Step {
-        When the number of seconds elapsed is a multiple of the number of seconds each attendee 
-        gets, then it is time to go to the next speaker.
-        
+        ミーティングの経過秒数が各参加者に与えられる時間の倍数になると次の話者に遷移します。
+
         @Code(name: "RecordMeeting.swift", file: ImplementingTimer-01-code-0008.swift)
       }
-      
+
       @Step {
-        When the last speaker has finished their turn, mutate the shared sync-up in state in order
-        to insert a new meeting into the collection.
-        
-        > Note: We are using the uncontrolled dependencies `Date()` and `UUID()` in this code,
-        which we have seen in the past can wreak havoc on writing tests. But we will fix these
-        issues a bit later.
-        
+        最後の話者が自身の順番を終えると共有された Sync-up を変更し、コレクションに記録したミーティングを挿入します。
+
+        > Note: このコードでは、テストコードで利用できない制御不能な `Date()` と `UUID()` の依存関係を使用しています。
+
         @Code(name: "RecordMeeting.swift", file: ImplementingTimer-01-code-0009.swift)
       }
-      
+
       @Step {
-        Further, when the last speaker has finished their turn we will also pop the record meeting
-        feature off the stack so that we are navigated back to the detail feature. We can do this by
-        leveraging the `dismiss` effect.
-        
+        最後の話者が順番を終えるタイミングで `dismiss` Effect を実行することで、ミーティング記録画面を `NavigationStack` からポップして、詳細画面に遷移するようにします。
+
         @Code(name: "RecordMeeting.swift", file: ImplementingTimer-01-code-0010.swift)
       }
-      
-      With just a few lines we have already implemented some quite nuanced logic and behavior in our
-      feature. We now have a timer running in parallel with the feature, it updates state with each
-      timer tick, and once we notice a condition is met we save the meeting to the sync-up and pop
-      the feature off the stack.
-      
-      Let's run the feature in the Xcode preview to make sure it works. However, we don't want to
-      wait for the full sync-up duration to pass just to see how this feature behaves. It would be
-      far better if we could stub in a sync-up that has a particularly short duration to make it
-      easier to preview. Luckily we can do that easily with the [`@Shared`](<doc:Shared>) property
-      wrapper.
-      
+
+      数行のコードで少し複雑なロジックと振る舞いを機能に導入することができました。
+      並列実行されるタイマーの発火時に状態を更新し、終了条件を満たすとミーティングを Sync-up に保存し、子画面を NavigationStack からポップするように実装しました。
+
+      Xcode プレビューで正しく動作するか確認する際、ミーティングの終了を最後まで待機する必要はありません。
+      [`@Shared`](<doc:Shared>) プロパティラッパーを用いて、短時間の Sync-up スタブを作成しましょう。
+
       @Step {
-        Go to the preview at the bottom of the AppFeature.swift file and override the shared
-        sync-ups state to provide a sync-up with 3 attendees and that is 6 seconds long. That
-        gives each attendee 2 seconds for their turn.
-        
+        `AppFeature.swift` ファイルのプレビューに移動し、共有状態である Sync-up をオーバーライドして、3人の参加者を含む計6秒の Sync-up スタブを作成します。
+        つまり、各参加者の持ち時間は2秒間です。
+
         @Code(name: "AppFeature.swift", file: ImplementingTimer-01-code-0011.swift, previousFile: ImplementingTimer-01-code-0011-previous.swift)
       }
-      
+
       @Step {
-        Run the preview, navigate to the "Morning sync", tap "Start meeting", and wait 6 seconds
-        to see each attendee get their turn and for the meeting feature to pop off the screen. Also
-        notice that a new meeting has been inserted into the sync-up detail's view.
-        
+        プレビューを実行して "Morning sync" の Sync-up 詳細画面に遷移し、 "Start meeting" ボタンをタップして6秒間待機します。
+        参加者全員の順番を終えると、ミーティング画面が `NavigationStack` からポップし、記録したミーティング情報が Sync-up 詳細画面に挿入されています。
+
         @Video(source: ImplementingTimer-01-video-0012.mov)
       }
     }
   }
-  
-  @Section(title: "Controlling dependencies early") {
+
+  @Section(title: "依存関係の早期制御") {
     @ContentAndMedia {
-      We have already accomplished quite a bit with just a small amount of code, but we want to 
-      quickly fix a few problems. Currently we have taken some shortcuts by reaching out to global,
-      uncontrolled dependencies, such as the `Date` and `UUID` initializer, and even `Task.sleep`
-      can be thought of as a dependency.
-      
-      We are not seeing any of the negative sides to using uncontrolled dependencies right now, but
-      as soon as we want to write tests, or make our Xcode previews friendlier to use, we will run
-      into problems. So, we are going to do a little bit of upfront work to control our dependencies
-      early on.
+      `Date` や `UUID` 、 `Task.sleep` などのグローバルで制御不能な依存関係を利用しています。
+
+      制御不能な依存関係を利用する場合、テストコードや Xcode プレビューと関わる際にデメリットが生じるため、早期段階で依存関係を制御可能なものに転換していきます。
     }
+
     @Steps {
-      Let's start by controlling the `Date` and `UUID` initializers.
-      
+      `Date` と `UUID` を制御可能にします。
+
       @Step {
-        Add the `\.date.now` and `\.uuid` dependencies to the feature.
-        
+        `\.date.now` と `\.uuid` 依存関係を機能に追加します。
+
         @Code(name: "RecordMeeting.swift", file: ImplementingTimer-02-code-0001.swift, previousFile: ImplementingTimer-02-code-0001-previous.swift)
       }
-      
+
       @Step {
-        Use these dependencies in the feature rather than reaching out to the uncontrolled 
-        dependencies.
-        
+        制御不能な依存関係を利用していた部分を、追加した依存関係に置き換えます。
+
         @Code(name: "RecordMeeting.swift", file: ImplementingTimer-02-code-0002.swift)
       }
-      
-      The next dependency is a little more subtle, and not something that has been covered in this
-      tutorial yet. When we used `Task.sleep` directly in our reducer, we unknowingly introduced a
-      pernicious dependency to our feature: the dependency of _time_!
-      
-      This dependency makes it difficult to test things, because you have to literally wait for
-      time to pass, which can cause your tests to take very long time to run or become 
-      non-deterministic. And it can make Xcode previews annoying because you need to wait around
-      for time to pass to see how your feature reacts.
-      
-      The Composable Architecture comes with a tool that allows us to take back control over time
-      rather than letting it control us.
-      
+
+      Reducer で使用した `Task.sleep` は時間に依存することになります。
+
+      時間経過を待機する必要があり、テストに時間を要したり非決定論的になったりするため、テストに支障が出る可能性があります。
+      また、 Xcode プレビューでも時間経過とともに機能の振る舞いを確認する必要があるため、手間がかかります。
+
+      TCA では、時間に支配されるのではなく、時間を制御できるようにするツールを提供しています。
+
       @Step {
-        Add the `\.continuousClock` dependency to the feature.
-        
-        > Note: This is a dependency that allows us to control how time flows in our tests and 
-        previews. We can either use an `ImmediateClock` to squash all of time down to a single 
-        instant, or we can use a `TestClock` if we want to explicitly advance time to specific
-        moments.
-        
+        `\.continuousClock` 依存関係を機能に追加します。
+
+        > Note: `\.continuousClock` 依存関係によってテストとプレビューで時間を制御できるようになります。
+        > `ImmediateClock` は時間の短縮、 `TestClock` は特定の瞬間への明示的なスキップを行います。
+
         @Code(name: "RecordMeeting.swift", file: ImplementingTimer-02-code-0003.swift)
       }
-      
+
       @Step {
-        Use the `clock.timer(interval:)` async sequence rather than performing an infinite loop
-        with a `Task.sleep` on the inside.
-        
+        無限ループの `Task.sleep` ではなく `clock.timer(interval:)` 非同期シーケンスを用いてタイマーを発火します。
+
         @Code(name: "RecordMeeting.swift", file: ImplementingTimer-02-code-0004.swift)
       }
-      
-      That's all it takes to control these dependencies. The application works exactly as it did
-      before, but we will be in a better position to write tests for the logic of our feature
-      now that we have done a little bit of upfront work.
+
+      依存関係が制御可能なものとなり、機能のロジックのテストコードを記述しやすくなりました。
     }
   }
-  
-  @Section(title: "Ending the meeting early") {
+
+  @Section(title: "ミーティングの早期終了") {
     @ContentAndMedia {
-      There are two ways that one can end the meeting early. There is a "next" button for skipping
-      the current speaker, and if the last speaker is skipped we would like to end the meeting 
-      early. And there is a dedicated "End meeting" button in the top-left. 
-      
-      Further, in each of these cases we would like to alert the user to let them know they are
-      ending the meeting early, and have them confirm to do so.
+      ミーティングを早期終了する方法は2つあります。
+      "Next" ボタンで現在の話者をスキップしていき、最後の話者がスキップされた時点で早期終了するか、左上に配置した "End meeting" ボタンを押下すると早期終了できるようにします。
+
+      また、早期終了時はユーザに警告で終了確認を求めるようにします。
     }
+
     @Steps {
       @Step {
-        Let's start with the logic for the `nextButtonTapped` action. We will want to go to the next
-        speaker _and_ advance the `secondsElapsed`, but only if we are not on the last speaker.
-        
-        > Note: We have also added some "todos" to the code for where we want to show alerts.
-        
+        `nextButtonTapped` アクションのロジックの実装から取りかかります。
+        最後の話者でない限り次の話者に進み、 `secondsElapsed` を本来の経過時間に設定します。
+
+        > Note: アラート表示箇所を TODO として追加しました。
+
         @Code(name: "RecordMeeting.swift", file: ImplementingTimer-03-code-0001.swift, previousFile: ImplementingTimer-03-code-0001-previous.swift)
       }
-      
+
       @Step {
-        Run the preview to see that you can tap arrow button to skip the current speaker.
+        プレビューを実行し、矢印ボタンをタップすると現在の話者をスキップできることを確認します。
       }
-      
-      Next we want to be able to show alerts when the user tries ending the meeting early. 
-      
+
+      次に、ユーザがミーティングを早期終了しようとした場合にアラートを表示するようにします。
+
       @Step {
-        Add optional `AlertState` to `RecordMeeting.State` that represents whether or not the alert
-        is currently showing.
-        
+        `RecordMeeting.State` にオプショナルの `AlertState` を追加し、アラートの表示状態を定義します。
+
         @Code(name: "RecordMeeting.swift", file: ImplementingTimer-03-code-0002.swift)
       }
+
       @Step {
-        Add a ``ComposableArchitecture/PresentationAction`` case to `RecordMeeting.Action` to
-        represent the actions that can take place in the alert. Right now we will allow confirming
-        the user wants to end the meeting early, but they can further save the meeting or discard 
-        it.
-        
+        `RecordMeeting.Action` にアラートで発生する可能性のあるアクションを表す ``ComposableArchitecture/PresentationAction`` ケースを追加します。
+        早期終了に対する確認や、記録したミーティングの保存・破棄が該当します。
+
         @Code(name: "RecordMeeting.swift", file: ImplementingTimer-03-code-0003.swift)
       }
+
       @Step {
-        Use the ``ComposableArchitecture/Reducer/ifLet(_:action:fileID:filePath:line:column:)-3ux09``
-        reducer method to integrate the alert's logic in your reducer.
-        
+        ``ComposableArchitecture/Reducer/ifLet(_:action:fileID:filePath:line:column:)-3ux09`` Reducer メソッドを使用してアラートロジックを Reducer に統合します。
+
         @Code(name: "RecordMeeting.swift", file: ImplementingTimer-03-code-0004.swift)
       }
+
       @Step {
-        Use SwiftUI's ``SwiftUI/View/alert(_:)`` view modifier to drive the presentation and 
-        dismissal of the alert from the store.
-        
-        > Note: Look towards the bottom of the `RecordMeetingView` to find the `alert` view 
-        modifier.
-      
+        SwiftUI の ``SwiftUI/View/alert(_:)`` ビュー修飾子を使用して Store を通じてアラートの表示状態を制御します。
+
+        > Note: `RecordMeetingView` の下部に `alert` ビュー修飾子を挿入しています。
+
         @Code(name: "RecordMeeting.swift", file: ImplementingTimer-03-code-0005.swift)
       }
-      
-      That's the basics of integrating an alert into our feature, but we are still not handling
-      the new alert actions we added to the domain, nor are we populating the `alert` state when
-      we want it to appear. Let's start with the latter, populating alert state.
-      
+
+      機能にアラートを統合する基本的な手法を紹介しましたが、ドメインに追加したアラートアクションやアラートを表示するための `alert` のセットが未実装です。
+      まずは `alert` をセットします。
+
       @Step {
-        Define a helper on `AlertState` that describes all of the details of the alert, including
-        its title, message and buttons. Use that helper to populate the `alert` state when
-        tapping the "End meeting" button and when the last speaker is skipped.
-        
+        `AlertState` を型拡張して、タイトル・メッセージ・ボタンなどのアラートの詳細を定義したヘルパー変数を実装します。
+        このヘルパー変数で "End meeting" ボタンタップ時と最後の話者がスキップされたときに早期終了を確認する `alert` を設定します。
+
         @Code(name: "RecordMeeting.swift", file: ImplementingTimer-03-code-0006.swift)
       }
-      
-      Next we need to handle the new alert actions we added to our domain. In fact, our reducer
-      is not compiling right now because we need to be exhaustive with our `switch` statement.
-      
+
+      現在は `switch` 文を網羅的に処理しておらず Reducer がコンパイルできないため、ドメインに追加したアラートアクションを処理するようにします。
+
       @Step {
-        When discarding the meeting, we only need to dismiss the feature. And when saving the
-        meeting, we will insert the meeting into the shared sync-up and then dismiss.
-        
+        ミーティングを破棄する場合は、画面を `dismiss()` メソッドで閉じるだけで完了します。
+        ミーティングを保存する場合は、ミーティングを共有状態の Sync-up に挿入してから画面を閉じるようにします。
+
         @Code(name: "RecordMeeting.swift", file: ImplementingTimer-03-code-0007.swift)
       }
-      
-      That is all it takes to implement the logic for ending a meeting early. But we can improve the
-      behavior of the feature a lot with one small change.
-      
-      Right now when you tap "End meeting" an alert shows, which is great, but the timer keeps going
-      in the background. This means you are losing time in the meeting by reading and considering
-      the alert. Wouldn't it be better if we could pause the timer when an alert is open?
-      
-      Luckily we can, and it's very straightforward.
-      
+
+      ミーティングの早期終了ロジックを実装しましたが、改善点があります。
+
+      現在、 "End meeting" ボタンをタップするとアラートが表示されますが、この間もタイマーはバックグラウンドで動作し続けているため、アラートの表示中もミーティングが進行することになっています。
+      アラート表示中はタイマーを一時停止するようにしましょう。
+
+      タイマーの一時停止は非常に簡単です。
+
       @Step {
-        Guard that the `alert` state is `nil` in the `timerTick` action to make sure the 
-        `secondsElapsed` state does not increment while an alert is showing.
-        
+        `timerTick` アクション受信時は `alert` が `nil` であることを保証することで、アラート表示中は `secondsElapsed` が増加しないようにします。
+
         @Code(name: "RecordMeeting.swift", file: ImplementingTimer-03-code-0008.swift)
       }
-      
+
       @Step {
-        Run the preview in AppFeature.swift again to see that we can end the meeting early now.
-        
+        `AppFeature.swift` でプレビューを再実行して、ミーティングを早期終了できるようになったことを確認します。
+
         @Video(source: ImplementingTimer-03-video-0009.mov)
       }
     }
   }
-  
-  @Section(title: "Testing the timer") {
+
+  @Section(title: "タイマーのテスト") {
     @ContentAndMedia {
-      We have now introduced quite a bit of logic and behavior to this feature, so it would be nice
-      to get some test coverage on it to make sure it works as we expect. There are a lot of 
-      different things we could test, but we will focus on just one major flow, and leave the
-      other flows as an exercise for the reader.
+      ミーティング記録機能に多くのロジックと振る舞いを導入したので、期待通りに動作することを検査するテストコードを記述します。
+      テスト対象は複数ありますが、今回は主要な単一フローのテストに限定し、他のフローは読者への課題として残しておきます。
     }
-    
+
     @Steps {
-      We are going to write a test that asserts on everything that happens when the user arrives at
-      the record meeting feature, the timer counts to the end, and a new meeting is inserted into
-      the sync-up and the feature is dismissed from the navigation stack.
-      
+      ユーザがミーティング記録画面に遷移し、タイマーが最後まで進み、ミーティングが Sync-up に記録され、 NavigationStack からポップするまでの一連のフローを検証するテストコードを記述します。
+
       @Step {
-        Create a new file called RecordMeetingTests.swift, which will hold the tests for the record
-        meeting feature.
-        
+        `RecordMeetingTests.swift` ファイルを作成し、ミーティング記録機能のテストコードを記述します。
+
         @Code(name: "RecordMeetingTests.swift", file: ImplementingTimer-04-code-0001.swift)
       }
-      
+
       @Step {
-        Create a ``ComposableArchitecture/TestStore`` by specifying the initial state of the 
-        feature, and the reducer that we want to test.
-        
-        > Note: There are 2 attendees in the sync-up and the duration is 4 seconds, giving each
-        attendee 2 seconds.
-        
+        初期状態とテスト対象の Reducer を指定して ``ComposableArchitecture/TestStore`` を作成します。
+
+        > Note: Sync-up は2人の参加者に2秒ずつ計4秒の時間が設定されています。
+
         @Code(name: "RecordMeetingTests.swift", file: ImplementingTimer-04-code-0002.swift)
       }
-      
+
       @Step {
-        Emulate the user navigating to the record meeting feature by sending the `onAppear` action.
-        This action does not mutate any state, and so there is no need to specify a trailing closure
-        to describe how state changes.
-        
+        `onAppear` アクションを送信し、ユーザのミーティング記録画面への遷移をエミュレートします。
+        このアクションでは状態を変更しないため、状態の変化を検査する Trailing closure を記述する必要はありません。
+
         @Code(name: "RecordMeetingTests.swift", file: ImplementingTimer-04-code-0003.swift)
       }
-      
+
       @Step {
-        Run the test to see that already we are getting failures.
-        
+        テストは失敗します。
+
         @Code(name: "RecordMeetingTests.swift", file: ImplementingTimer-04-code-0004.swift)
       }
-      
-      Each of these failures are good to have because there is behavior occurring in the feature
-      that we are not asserting against. First, by the time the test finished there was an effect
-      still in flight, which means there could be more actions sent into the system that we are not
-      accounting for. And second, we are using a dependency without overriding it.
-      
-      Let's fix the dependency error first by overriding it with a `TestClock`, which allows us to
-      control the flow of time.
-      
+
+      この失敗は、機能の振る舞いに未検証部分があることを示している点で有益です。
+      テスト終了時点で実行中の Effect が残っていると、予期せぬアクションがシステムに送信されてしまう可能性があります。
+      また、依存関係をオーバーライドせずに使用していることについてもエラーメッセージも出力されています。
+
+      依存関係のエラーから修正しましょう。時間を制御するため、 `TestClock` でオーバーライドします。
+
       @Step {
-        Use the trailing `withDependencies` closure of the ``ComposableArchitecture/TestStore``
-        initializer to override the `continuousClock` dependency with a `TestClock`.
-        
+        ``ComposableArchitecture/TestStore`` イニシャライザの `withDependencies` Trailing closure で `continuousClock` 依存関係を `TestClock` でオーバーライドします。
+
         @Code(name: "RecordMeetingTests.swift", file: ImplementingTimer-04-code-0005.swift)
       }
-      
+
       @Step {
-        Use the `advance(by:)` method on `clock` to advance one second.
-        
+        `clock` の `advance(by:)` メソッドを用いてミーティングの経過時間を1秒進めます。
+
         @Code(name: "RecordMeetingTests.swift", file: ImplementingTimer-04-code-0006.swift)
       }
-      
+
       @Step {
-        Run the test to see that we get a new test failure letting us know that an effect emitted an
-        action back into the system, but we didn't assert on that action.
-        
+        テストを実行すると、 Effect がシステムにアクションを送信したにもかかわらずアクション結果が未検証であるという旨のエラーメッセージが出力されることを確認します。
+
         @Code(name: "RecordMeetingTests.swift", file: ImplementingTimer-04-code-0007.swift)
       }
-      
+
       @Step {
-        Use the ``ComposableArchitecture/TestStore/receive(_:timeout:assert:fileID:file:line:column:)-53wic``
-        method to assert that the store receives a `timerTick` action, and that when that action is
-        received the `secondsElapsed` state increments to 1.
-        
+        ``ComposableArchitecture/TestStore/receive(_:timeout:assert:fileID:file:line:column:)-53wic`` メソッドを用いて、 Store が `timerTick` アクションを受信したときに `secondsElapsed` が1に増加していることを検査します。
+
         @Code(name: "RecordMeetingTests.swift", file: ImplementingTimer-04-code-0008.swift)
       }
-      
-      Although the test is not passing yet, we have written our first assertion on how an effect
-      executes and feeds data back into the system. It largely consists of two important steps:
-      
-      * Control the dependencies that your effects use so that you can emulate their behavior in
-      a test in a deterministic manner. In this case it's using a `TestClock` for the timer instead
-      of reaching out to the global, uncontrollable `Task.sleep`.
-      * Use the `receive` method on ``ComposableArchitecture/TestStore`` to assert what actions
-      an effect sends back into the system, and to assert on how state changes when that action
-      is received.
-      
-      Now we can play out the rest of the user script to emulate all 4 seconds passing so that 
-      the meeting ends.
-      
+
+      テストはまだパスしませんが、 Effect の実行とシステムに送信されたデータを検査するテストコードを記述しました。
+      このテストコードのポイントは以下の2つです。
+
+      - Effect で使用する依存関係を制御して、決定論的に振る舞いをエミュレートします。今回はタイマーに対してグローバルで制御不能な `Task.sleep` ではなく `TestClock` を用いています。
+      - ``ComposableArchitecture/TestStore`` の `receive` メソッドを用いて、 Effect を通じてアクションを受信したときの状態の変化を検査します。
+
+      `TestClock` と `receive` メソッドを用いてミーティングの経過と終了をエミュレートできます。
+
       @Step {
-        Advance the clock 1 more second to assert that we receive another `timerTick` action, 
-        causing the `secondsElapsed` to increment again, but also causing the `speakerIndex`
-        to increment since it is now the next speaker's turn.
-        
+        クロックを1秒進め、 `timerTick` アクション受信後の状態の変化を検査します。
+        このタイミングでは `secondsElapsed` が増加するだけでなく、次の話者に移るため `speakerIndex` も増加します。
+
         @Code(name: "RecordMeetingTests.swift", file: ImplementingTimer-04-code-0009.swift)
       }
-      
+
       @Step {
-        Advance the clock 1 more second to assert that we receive another `timerTick` action,
-        and this time only the `secondsElapsed` increments.
-        
+        次の周期では `secondsElapsed` のみが増加します。
+
         @Code(name: "RecordMeetingTests.swift", file: ImplementingTimer-04-code-0010.swift)
       }
-      
+
       @Step {
-        And finally, advance the clock 1 more second to assert that we receive another `timerTick`
-        action, causing the `secondsElapsed` to increment again, and further causing the meeting
-        to end by inserting the meeting into the sync-up.
-        
+        最後の周期では `secondsElapsed` の増加と Sync-up へのミーティング記録の挿入を検査します。
+
         @Code(name: "RecordMeetingTests.swift", file: ImplementingTimer-04-code-0011.swift)
       }
-      
-      We have now played out a full script of user actions, alongside a full script of effect
-      actions and state change expectations. Ideally this would just pass, but there are still a
-      few behavioral things happening that the ``ComposableArchitecture/TestStore`` wants us to
-      assert on. To see what needs to be asserted, let's run the test again.
-      
+
+      ユーザアクションと Effect を通じたアクションの受信後の状態を検査しましたが、 ``ComposableArchitecture/TestStore`` はさらなる検証を要求します。
+      現時点のテストコードで漏れている検証項目を明らかにするためにテストを再実行します。
+
       @Step {
-        Run the test case to see that we still have failures.
-        
-        > Note: Scroll to the bottom of the code snippet to see the test failures.
-        
+        テストケースを実行すると失敗します。
+
+        > Note: コードスニペットの下部までスクロールしてテストの失敗メッセージを確認できます。
+
         @Code(name: "RecordMeetingTests.swift", file: ImplementingTimer-04-code-0012.swift)
       }
-      
-      There are quite a few failures, but luckily they are all straightforward to fix.
-      
-      The last three failures are all related. The first two complain of using the `\.date` and
-      `\.uuid` dependencies without having overridden them. This helps us understand what 
-      dependencies are used in the user flow we are testing. And then the last failure is due to
-      our state change expectation not being correct since we didn't override those dependencies.
-      
-      To fix we need to override the `\.uuid` and `\.date` dependencies so that we can predict the
-      values they will produce when our feature code is run.
-      
+
+      大量の失敗メッセージが出力されますが、すべて簡単に修正することができます。
+
+      これらの失敗メッセージは全て関連しています。
+      最初の2つは `\.date` と `\.uuid` の依存関係をオーバーライドしていないことを指摘しており、ユーザフローで使用している依存関係を把握することができます。
+      最後のメッセージは依存関係をオーバーライドしなかったことで、正確な状態の予測ができないことが原因です。
+
+      修正するには `\.uuid` と `\.date` の依存関係をオーバーライドして、機能のロジック内で生成される値を予測できるようにします。
+
       @Step {
-        Set the `date` and `uuid` dependencies in the `withDependencies` trailing closure.
-        
+        `withDependencies` Trailing closure で `date` と `uuid` の依存関係を設定します。
+
         @Code(name: "RecordMeetingTests.swift", file: ImplementingTimer-04-code-0013.swift)
       }
-      
+
       @Step {
-        Run tests to see that we are down to just 2 test failures now.
-        
-        > Note: Scroll to the bottom of the code snippet to see the test failures.
-        
+        テストを再実行すると失敗メッセージが2つに減りました。
+
+        > Note: 失敗メッセージを確認するには、コードスニペットの下部までスクロールしてください。
+
         @Code(name: "RecordMeetingTests.swift", file: ImplementingTimer-04-code-0014.swift)
       }
-      
-      The first failure is due to the timer effect still running. The 
-      ``ComposableArchitecture/TestStore`` requires that you explicitly make all effects finish
-      before the test is over in order to make sure that you are not accidentally missing out on
-      future behavior. However, in this case the timer effect is cancelled when the feature is
-      dismissed, causing the record meeting feature to be popped off the stack. Since we are only
-      testing the record meeting feature, and not the full stack, we can explicitly get a handle
-      on the effect created when sending `onAppear` in the test, and manually cancel it at the
-      end of the test.
-      
+
+      最初の失敗メッセージは、タイマー Effect がテスト終了時点で実行中のままであることを示しています。
+      ``ComposableArchitecture/TestStore`` は、予期せぬ振る舞いが生じないことを保証するために、テスト終了前に明示的にすべての Effect を終了させることを要求します。
+      ここで、タイマー Effect はミーティング記録画面が NavigationStack からポップすると同時にキャンセルされます。
+      今回は NavigationStack 全体ではなくミーティング記録機能に限定したテストであるため、 `onAppear` アクション送信時に作成された Effect を明示的に取得し、テストの最後で明示的にキャンセルすることができます。
+
       @Step {
-        Assign a variable to `store.send(.onAppear)` and cancel that handle at the end of the test.
-        
+        `store.send(.onAppear)` の実行結果を変数として保持し、テストの最後で Effect を明示的にキャンセルします。
+
         @Code(name: "RecordMeetingTests.swift", file: ImplementingTimer-04-code-0015.swift)
       }
-      
-      And the second failure to fix is due to the `dismiss` dependency being used when the timer
-      finishes, and we are not asserting on that behavior. This is a great failure to have because 
-      it forces us to consider how the child feature dismisses itself, and if ever in the future
-      we mess up this logic we would have a test in place to keep us in check.
-      
-      To fix the test we need to override the ``Dependencies/DependencyValues/dismiss`` dependency.
-      
+
+      修正すべき2つ目の失敗メッセージは、タイマー終了時に `dismiss` 依存関係の振る舞いを検証していないことを示しています。
+      これは、子画面が自身を非表示にしていることを保証する点で素晴らしい失敗だと言えます。
+
+      テストコードを修正するには ``Dependencies/DependencyValues/dismiss`` 依存関係をオーバーライドします。
+
       @Step {
-        Override the `dismiss` dependency in the `withDependencies` trailing closure.
-        
+        `withDependencies` Trailing closure で `dismiss` 依存関係をオーバーライドします。
+
         @Code(name: "RecordMeetingTests.swift", file: ImplementingTimer-04-code-0016.swift)
       }
-      
-      This technically gets the test passing, but we aren't actually asserting that the `dismiss`
-      dependency was invoked. We are just overriding the dependency to quiet the test failure.
-      
-      In order to _prove_ that the `dismiss` effect is invoked, we will create a test expectation,
-      fulfill it in the ``ComposableArchitecture/DismissEffect``, and then wait for its 
-      fulfillment at the end of the test.
-      
+
+      テストはパスするようになりましたが、失敗メッセージを消去するために依存関係をオーバーライドしただけで、 `dismiss` 依存関係が呼び出されることを検査できていません。
+
+      ``ComposableArchitecture/DismissEffect`` を用いることで、 `dismiss` Effect が呼び出されたことを検査することができます。
+
       @Step {
-        Use the ``TestStore/isDismissed`` property to assert that the feature was dismissed at the
-        end of the test.
+        ``TestStore/isDismissed`` プロパティを使用して、テストの最後に画面が閉じられたことを検査します。
 
         @Code(name: "RecordMeetingTests.swift", file: ImplementingTimer-04-code-0017.swift)
       }
-      
-      Now the entire test is passing, and we have proven that the `dismiss` effect is invoked, and
-      so as long as everything is hooked up correctly in the parent we can be sure that the feature
-      will indeed be popped off the stack.
-      
-      By why leave it to chance that the parent and child features are correctly integrated 
-      together? We can write a test that proves it! And we highly encourage you to give it a 
-      shot. 🙂 
+
+      `dismiss` Effect が呼び出されることを検査したため、親である NavigationStack で機能同士が正しく接続されている限り、機能が確実に NavigationStack からポップされることを保証できるようになりました。
+
+      親子機能が正しく統合されていることを証明するための非網羅的なテストコードの記述にも挑戦してみましょう。
     }
   }
 }

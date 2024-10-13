@@ -1,344 +1,289 @@
 @Tutorial(time: 40) {
-  @Intro(title: "Testing presentation") {
-    Learn how to write tests for features built using the library's navigation tools, including
-    how multiple features integrate together and communicate with each other.
+  @Intro(title: "画面表示のテスト") {
+    TCA ライブラリの画面遷移ツールを使用して構築した機能のテストコードを記述する方法を紹介します。
+    このチュートリアルでは、複数機能の統合と通信方法も合わせて紹介します。
   }
-  
-  @Section(title: "Testing the add contact flow") {
+
+  @Section(title: "連絡先追加フローのテスト") {
     @ContentAndMedia {
-      The first functionality we will test is adding a new contact. This entails emulating the 
-      entire user flow of the user tapping the "+" button, typing into the name text field, 
-      tapping the "Save" button, and confirming that the sheet is dismissed and the new contact
-      is added to the list.
+      まずは連絡先追加画面のテストコードを記述します。
+      ユーザが "+" ボタンをタップして連絡先追加画面を表示し、テキストフィールドに連絡先を入力した後 "Save" ボタンをタップするとシートが閉じられ、連絡先が連絡先リストに追加される一連のユーザフローをエミュレートします。
     }
-    
-    @Steps {      
+
+    @Steps {
       @Step {
-        Add a new file, ContactsFeatureTests.swift, to your test target and paste in some basic
-        scaffolding for a test.
-        
+        テストターゲットに `ContactsFeatureTests.swift` を追加し、テストの基本的な土台を作成します。
+
         @Code(name: "ContactsFeatureTests.swift", file: 02-03-01-code-0000.swift)
       }
-      
+
       @Step {
-        Construct a test store by supplying the initial state the feature should start in, as well
-        as the reducer that is being tested.
-        
-        > Note: See <doc:01-03-TestingYourFeature> for a tutorial on testing, as well as the article
-        <doc:Testing> for more detailed information.
-        
+        機能が開始すべき初期状態と、テスト対象のレデューサーを提供して、テストストアを構築します。
+
+        > Note: テストに関する詳細なチュートリアルについては <doc:01-03-TestingYourFeature> と <doc:Testing> を参照してください。
+
         @Code(name: "ContactsFeatureTests.swift", file: 02-03-01-code-0001.swift)
       }
-      
+
       @Step {
-        Emulate the user tapping on the "+" button by sending the `addButtonTapped` action. The 
-        trailing closure provided is where we will assert on how state changes after sending
-        the action.
-        
+        `addButtonTapped` アクションを送信し、ユーザが "+" ボタンをタップしたことをエミュレートします。
+        Trailing closure でアクション送信後の状態の変化を検査します。
+
         @Code(name: "ContactsFeatureTests.swift", file: 02-03-01-code-0002.swift)
       }
-      
+
       @Step {
-        The only mutation we expect to happen is that the `destination` field becomes populated
-        with some data, in particular the `addContact` case of the destination enum.
-        
+        ここでは `destination` が `Destination` 列挙型の `addContact` ケースでセットされることを期待しています。
+
         @Code(name: "ContactsFeatureTests.swift", file: 02-03-01-code-0003.swift)
       }
-      
+
       @Step {
-        The `addContact` case will hold onto some data, which is `AddContactFeature.State`.
-        
+        `addContact` ケースは `AddContactFeature.State` を保持します。
+
         @Code(name: "ContactsFeatureTests.swift", file: 02-03-01-code-0004.swift)
       }
-      
+
       @Step {
-        To construct that state we need to construct a `Contact` value, and now we run into 
-        trouble. What can we provide for the ID?
-        
+        `AddContactFeature.State` を構築するには `Contact` の初期化が必要ですが、 ID の値が予測できません。
+
         @Code(name: "ContactsFeatureTests.swift", file: 02-03-01-code-0005.swift)
       }
-      
-      The `ContactsFeature` currently makes use of an uncontrolled dependency, making it very hard
-      to test this feature. It constructs a random UUID when presenting this feature, and we can't
-      predict that ID to get a passing test. So, just as we did in <doc:01-03-TestingYourFeature>,
-      we will add a dependency on a UUID generator to our `ContactsFeature`.
-      
+
+      `ContactsFeature` は制御されていない依存関係(= ランダムな UUID)を使用しているため、テストが困難になっています。
+      そこで、前のセクション <doc:01-03-TestingYourFeature> で行ったように UUID ジェネレータの依存関係を `ContactsFeature` に追加します。
+
       @Step {
-        Go back to ContactsFeature.swift, and add a dependency on the UUID generator.
-        
+        `ContactsFeature.swift` に戻り、 UUID ジェネレータの依存関係を追加します。
+
         @Code(name: "ContactsFeature.swift", file: 02-03-01-code-0006.swift, previousFile: 02-03-01-code-0006-previous.swift)
       }
-      
+
       @Step {
-        Use the newly added UUID dependency for creating UUIDs rather than reaching out to the
-        global, uncontrollable initializer.
-        
+        制御不能な UUID イニシャライザを使用する代わりに、追加した UUID 依存関係を使用します。
+
         @Code(name: "ContactsFeature.swift", file: 02-03-01-code-0007.swift)
       }
-      
+
       @Step {
-        Go back to ContactsFeatureTests.swift and override the dependencies on the test store so
-        that it uses a controlled UUID generator. In particular, we will use the "incrementing"
-        generator, which generates sequential, increasing IDs starting at 0.
-        
+        `ContactsFeatureTests.swift` に戻り、 TestStore の依存関係をオーバーライドして制御可能な UUID ジェネレータを使用するようにします。
+        ここでは、0から始まり連続的に増加する ID を生成する `incrementing` ジェネレータを使用します。
+
         @Code(name: "ContactsFeatureTests.swift", file: 02-03-01-code-0008.swift, previousFile: 02-03-01-code-0008-previous.swift)
       }
-      
+
       @Step {
-        Now we can predict the UUID generated when the contact is created.
-        
-        > Note: The initializer on UUID that allows providing an integer is provided by our 
-        > [swift-dependencies][swift-dependencies] library, which the Composable Architecture 
-        > depends on.
-        
+        これで連絡先の作成時に生成される UUID を予測できるようになりました。
+
+        > Note: 整数を UUID として保持する UUID イニシャライザは TCA が依存する [swift-dependencies][swift-dependencies] ライブラリによって提供されています。
+
         [swift-dependencies]: http://github.com/pointfreeco/swift-dependencies
-        
+
         @Code(name: "ContactsFeatureTests.swift", file: 02-03-01-code-0009.swift)
       }
-      
-      This test passes! So this proves that when the "+" button is tapped, that a sheet will fly
-      up for the "Add Contact" feature. Let's keep asserting on more of the user flow.
-      
+
+      このテストがパスするようになり、 "+" ボタンのタップ時に連絡先追加シートが表示されることが検証できました。
+      他のユーザフローについてもテストコードを記述していきます。
+
       @Step {
-        Emulate the user typing into the name text field of the contact. The trailing closure is
-        where we can assert on how state changed after sending the action.
-        
-        > Tip: The payload of an action can be sent as a second argument when using case key path
-        > syntax.
-        
+        次は、連絡先名称のテキストフィールドへのユーザ入力をエミュレートします。
+        Trailing closure でアクション送信後の状態の変化を検証します。
+
+        > Tip: アクションのペイロードは KeyPath 構文の第2引数で送信できます。
+
         @Code(name: "ContactsFeatureTests.swift", file: 02-03-01-code-0010.swift)
       }
-      
+
       @Step {
-        Assert on how state changed by mutating the `destination` through the `addContact` case of
-        the destination enum. 
-        
-        To do this we can chain into the `addContact` case name directly and mutate a part of its
-        associated value.
-        
-        > Tip: To chain into an enum and mutate an associated value, the enum must be annotated with
-        > `@CasePathable` _and_ `@dynamicMemberLookup`. The `@Reducer` macro automatically applies
-        > these annotations to enum-based `State`, but you must manually apply it to other enums.
-        
+        チェーンによって Destination 列挙型の `addContact` ケースに関連する状態を変更することで状態の変化を検査します。
+
+        > Tip: チェーンによって列挙型の関連値を変更するには列挙型に `@CasePathable` と `@dynamicMemberLookup` アノテーションが必要ですが、 `@Reducer` マクロは自動的にこれらのアノテーションを列挙型の `State` に適用します。
+
         @Code(name: "ContactsFeatureTests.swift", file: 02-03-01-code-0011.swift)
       }
-      
+
       @Step {
-        Emulate the user tapping the "Save" button in the "Add Contact" feature. We do not 
-        expect the state to change immediately when sending this action, and so we do not need
-        to provide a trailing closure.
-        
+        連絡先追加機能でユーザによる "Save" ボタンのタップをエミュレートします。
+        このアクションでは即時的な状態の変化は期待していないため、 Trailing closure を記述する必要はありません。
+
         @Code(name: "ContactsFeatureTests.swift", file: 02-03-01-code-0012.swift)
       }
-      
+
       @Step {
-        Emulate the delegate action `saveContact` being received by the test store. This action is
-        sent from the `AddContactFeature` when the "Save" button is tapped.
-        
+        "Save" ボタンタップ時に `AddContactFeature` から送信される `saveContact` デリゲートアクションを TestStore が受信することをエミュレートします。
+
         @Code(name: "ContactsFeatureTests.swift", file: 02-03-01-code-0013.swift)
       }
-      
+
       @Step {
-        Assert that when a delegate action is received that state mutates by adding a contact to the
-        array.
-        
+        デリゲートアクション受信時に配列に連絡先が追加されることを検査します。
+
         @Code(name: "ContactsFeatureTests.swift", file: 02-03-01-code-0014.swift)
       }
-      
+
       @Step {
-        To further assert that when the `saveContact` delegate action was received, you must
-        annotate `AddContactFeature.Action.Delegate` with the `@CasePathable` macro.
-        
+        `AddContactFeature.Action.Delegate` に `@CasePathable` アノテーションを付与して KeyPath 構文による `saveContact` デリゲートアクションを受信できるようにします。
+
         @Code(name: "ContactsFeature.swift", file: 02-03-01-code-0015.swift, previousFile: 02-03-01-code-0015-previous.swift)
       }
-      
+
       @Step {
-        Now you can further dive into the `saveContact` case and even assert against its payload.
-        
+        これで `saveContact` ケースのペイロードを検査できるようになりました。
+
         @Code(name: "ContactsFeatureTests.swift", file: 02-03-01-code-0016.swift, previousFile: 02-03-01-code-0014.swift)
       }
-      
+
       @Step {
-        Finally assert that the test store receives a 
-        ``ComposableArchitecture/PresentationAction/dismiss`` action, which causes the "Add Contact"
-        feature to be dismissed.
-        
+        最後に、 TestStore が ``ComposableArchitecture/PresentationAction/dismiss`` アクションを受信することを検査します。
+        これにより、連絡先追加画面が閉じられます。
+
         @Code(name: "ContactsFeatureTests.swift", file: 02-03-01-code-0017.swift)
       }
-      
-      This is a fully passing test, and proves the end-to-end lifecycle of presenting a child
-      feature, interacting with it, and how the child communicates information back to the parent.
-      However, this test is quite verbose, and is asserting on behavior that is local to just the
-      "Add Contact" feature. If we are only wanting to test at a high level that we can present
-      and dismiss a child feature, there is a better tool available called "non-exhaustive"
-      testing.
+
+      子機能を表示し、子機能で入力された値をエミュレートし、子機能が親機能に通信するという一連のライフサイクルを検証しました。
+      しかし、このテストは連絡先追加機能の一連の動作をすべて検査しているという点で冗長的であり、子機能の表示と非表示だけを検査したい場合は「非網羅的テスト」と呼ばれるツールが利用可能です。
     }
   }
-  
-  @Section(title: "Non-exhaustive testing") {
+
+  @Section(title: "非網羅的テスト") {
     @ContentAndMedia {
-      The previously written test is powerful and impressive, but also verbose. We had to assert
-      on how everything evolves in the child feature, and had to assert how every effect action
-      is received by the store. Sometimes it can be useful to write tests in a less exhaustive 
-      manner, especially when testing the integration of many features, such as is the case with
-      features performing navigation.
-      
-      See <doc:Testing#Non-exhaustive-testing> for more information on non-exhaustive testing
-      techniques.
+      子機能のすべての振る舞いをテストするために、 Store が受信するすべての Effect を検査する必要がありました。
+      画面遷移のある機能など、1つに統合された複数の機能テストする場合、非網羅的な方法でテストコードを記述することが有用な場合があります。
+
+      非網羅的テストの詳細については <doc:Testing#Non-exhaustive-testing> を参照してください。
     }
-    
+
     @Steps {
       @Step {
-        Start a new test case to test the same "Add Contact" user flow as above, but this time
-        we will do it in the non-exhaustive style.
-        
+        前のセクションと同じ連絡先追加機能のユーザフローの非網羅的なテストコードを記述します。
+
         @Code(name: "ContactsFeatureTests.swift", file: 02-03-02-code-0000.swift)
       }
-      
+
       @Step {
-        Set the test store's ``ComposableArchitecture/TestStore/exhaustivity`` to `.off`.
-        
+        ただし、今回は TestStore の ``ComposableArchitecture/TestStore/exhaustivity`` を `.off` にセットします。
+
         @Code(name: "ContactsFeatureTests.swift", file: 02-03-02-code-0001.swift)
       }
-      
+
       @Step {
-        Emulate the user tapping on the "+" button, but this time do not provide a trailing
-        closure. In non-exhaustive test stores there is no need to assert on state changes if you
-        do not want to.
-        
+        連絡先リスト画面でのユーザの "+" ボタンのタップをエミュレートしますが、非網羅的な TestStore では状態の変化を検査しなくてよいため、 Trailing closure は記述しません。
+
         @Code(name: "ContactsFeatureTests.swift", file: 02-03-02-code-0002.swift)
-      } 
-      
+      }
+
       @Step {
-        Emulate the user typing into the name text field of the contact, but again do not assert
-        on any state changes in the child feature.
-        
+        ユーザによる連絡先名称のテキストフィールドへの入力をエミュレートしますが、ここでも状態の変化は検査しません。
+
         @Code(name: "ContactsFeatureTests.swift", file: 02-03-02-code-0003.swift)
       }
-      
+
       @Step {
-        Emulate the user tapping the "Save" button in the child feature.
-        
+        ユーザによる連絡先追加画面の "Save" ボタンのタップをエミュレートします。
+
         @Code(name: "ContactsFeatureTests.swift", file: 02-03-02-code-0004.swift)
       }
-      
+
       @Step {
-        Next we want to assert that sometime after the user taps the "Save" button that the 
-        contact is added to the array and the child feature is dismissed. However, we cannot assert
-        on that until all the actions have been received, and so we can do that by using
-        ``ComposableArchitecture/TestStore/skipReceivedActions(strict:fileID:file:line:column:)``.
-        
+        次に、ユーザが "Save" ボタンをタップして連絡先が配列に追加され、連絡先追加画面が閉じられることを検査したいのですが、すべてのアクションの受信を待機する必要があります。
+        そこで、 ``ComposableArchitecture/TestStore/skipReceivedActions(strict:fileID:file:line:column:)`` を使用することで、中間アクションをスキップすることができます。
+
         @Code(name: "ContactsFeatureTests.swift", file: 02-03-02-code-0005.swift)
       }
-      
+
       @Step {
-        Assert that the final state of the feature has a new contact added to the array and the
-        `destination` state is `nil`'d out.
-        
+        最終的な状態が、ユーザによって入力された連絡先が配列に追加され、 `destination` が `nil` でセットされていることを検査します。
+
         @Code(name: "ContactsFeatureTests.swift", file: 02-03-02-code-0006.swift)
       }
-      
-      That's all it takes to write a very high level test covering the full user flow of adding
-      a new contact to the list. We don't need to assert on all of the nitty gritty details in
-      the child feature, and instead can just assert that the contact was indeed added after the
-      user completed their steps.
+
+      連絡先リストに連絡先を追加するユーザフローをカバーする高次元なテストを記述しました。
+      子機能のすべての詳細な振る舞いを検査するのではなく、ユーザが一連のフローを完了した後に連絡先が追加されたことを検査するだけです。
     }
   }
-  
-  @Section(title: "Testing the delete contact flow") {
+
+  @Section(title: "連絡先削除フローのテスト") {
     @ContentAndMedia {
-      The last important piece of functionality to test is deleting a contact. This involves tapping
-      a button, asserting that an alert is shown, confirming the deletion through the alert, and
-      then asserting that indeed the contact was removed.
+      最後は連絡先の削除フローのテストコードを記述します。
+      ゴミ箱ボタンをタップするとアラートが表示され、アラートを通じて削除を確認し、最終的に連絡先が削除されたことを確認する一連のユーザフローをエミュレートします。
     }
-    
+
     @Steps {
       @Step {
-        Start a new test method to test the delete flow.
-        
+        連絡先の削除フローをテストするためのテストメソッドを宣言します。
+
         @Code(name: "ContactsFeatureTests.swift", file: 02-03-03-code-0000.swift)
       }
-      
+
       @Step {
-        Create a ``ComposableArchitecture/TestStore`` for testing the `ContactsFeature` reducer.
-        This time we do not need to override any dependencies because we do not expect any to be
-        used
-        
+        `ContactsFeature` Reducer をテストするための ``ComposableArchitecture/TestStore`` を構築します。
+        今回は使用する依存関係がないため、依存関係をオーバーライドする必要はありません。
+
         @Code(name: "ContactsFeatureTests.swift", file: 02-03-03-code-0001.swift)
       }
-      
+
       @Step {
-        Start the initial state of the feature with some contacts already added to the array. This
-        will make it easier to test the deletion behavior.
-        
+        TestStore の初期状態として、いくつかの連絡先が配列に追加されたスタブをセットすることで、テストを簡潔にします。
+
         @Code(name: "ContactsFeatureTests.swift", file: 02-03-03-code-0002.swift)
       }
-      
+
       @Step {
-        Emulate the user tapping on the delete button by sending the `deleteButtonTapped` action.
-        We will test deleting the second contact, which has an ID of `UUID(1)`.
-        
+        `deleteButtonTapped` アクションを送信し、ユーザがゴミ箱ボタンをタップしたことをエミュレートします。
+        今回は、2番目の連絡先(ID: `UUID(1)`)を削除することにします。
+
         @Code(name: "ContactsFeatureTests.swift", file: 02-03-03-code-0003.swift)
       }
-      
+
       @Step {
-        We expect that the state's `destination` field will be populated with the `alert` case 
-        since an alert should appear.
-        
+        アラートを表示するので、 `destination` が `alert` でセットします。
+
         @Code(name: "ContactsFeatureTests.swift", file: 02-03-03-code-0004.swift)
       }
-      
+
       @Step {
-        Technically we can simply repeat exactly what we did in the reducer for constructing the
-        alert. It's verbose, but it does get the test passing.
-        
+        技術的には Reducer でアラートを定義した時と同じ構造のテストコードになり、テストもパスします。
+
         @Code(name: "ContactsFeatureTests.swift", file: 02-03-03-code-0005.swift)
       }
-      
-      However, that is a bit of a pain to repeat all of that work. There is a better way.
-      
+
+      しかし、 Reducer で定義したアラートが繰り返され、冗長的になってしまいます。
+
       @Step {
-        Go back to ContactsFeature.swift where the reducer is implemented. Extend `AlertState` 
-        with its `Action` generic constrained to `ContactsFeature.Action`. Add a static function
-        that constructs the alert, which allows us to reuse this logic in multiple places.
-        
+        `ContactsFeature.swift` に戻り、 Reducer を実装した部分に移動します。
+        `AlertState` を拡張し、その `Action` に `ContactsFeature.Action` の型制約を追加します。
+        アラートを構築する静的関数を追加し、このロジックを複数箇所で再利用できるようにします。
+
         @Code(name: "ContactsFeature.swift", file: 02-03-03-code-0006.swift)
       }
-      
+
       @Step {
-        Make use of the new `deleteConfirmation` static alert function in the `ContactsFeature` 
-        reducer, rather than building `AlertState` from scratch.
-        
+        `ContactsFeature` Reducer で `AlertState` を構築する代わりに、追加した `deleteConfirmation` 静的関数を呼び出します。
+
         @Code(name: "ContactsFeature.swift", file: 02-03-03-code-0007.swift, previousFile: 02-03-03-code-0007-previous.swift)
       }
-      
+
       @Step {
-        Go back to ContactsFeatureTests.swift and use the new `deleteConfirmation` static function
-        to assert against the alert, rather than building `AlertState` from scratch.
-        
-        Run the test to see this passes. This proves that when the delete button is tapped, an
-        alert is shown to the user.
-        
+        `ContactsFeatureTests.swift` に戻り、ここでも同様に追加した `deleteConfirmation` 静的関数を呼び出すようにします。
+
+        ゴミ箱ボタンのタップ時にユーザにアラートが表示されることを検査するテストがパスするようになりました。
+
         @Code(name: "ContactsFeatureTests.swift", file: 02-03-03-code-0008.swift, previousFile: 02-03-03-code-0008-previous.swift)
       }
-      
+
       @Step {
-        Emulate the user confirming to delete contact by sending the `confirmDeletion` action 
-        in the alert.
-        
+        アラート経由で `confirmDeletion` アクションを送信することで、ユーザが連絡先が削除されるのを確認したことをエミュレートします。
+
         @Code(name: "ContactsFeatureTests.swift", file: 02-03-03-code-0009.swift)
       }
-      
+
       @Step {
-        Assert that the alert was dismissed and that the contact corresponding to the ID of 
-        `UUID(1)` was removed. 
-        
+        連絡先の削除確認後、アラートが閉じられ、 ID が `UUID(1)` の連絡先が削除されたことを検査します。
+
         @Code(name: "ContactsFeatureTests.swift", file: 02-03-03-code-0010.swift)
       }
-      
-      That is all it takes to test the deletion flow. Run the test suite to see everything passes,
-      proving that when the user taps the confirmation button in the alert that indeed the contact
-      will be removed.
+
+      これで一連の連絡先削除フローのテストが完了しました。
     }
   }
 }

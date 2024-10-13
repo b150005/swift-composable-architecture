@@ -1,225 +1,186 @@
 @Tutorial(time: 30) {
-  @Intro(title: "Navigation stacks") {
-    We will continue with the contacts application built in previous sections by adding
-    a navigation stack to the root of the application so that we can drill down to a contact.
+  @Intro(title: "ナビゲーションスタック") {
+    前のセクションで構築した連絡先アプリケーションの Root ビューにナビゲーションスタックを追加し、連絡先詳細画面に遷移できるようにします。
   }
-  
-  @Section(title: "Contact detail feature") {
+
+  @Section(title: "連絡先詳細機能") {
     @ContentAndMedia {
-      We are going to add a new "Contact Detail" feature that will allow us to drill down a layer
-      from the contacts list at the root.
+      Root ビューである連絡先リスト画面から下のビュー階層に遷移できる連絡先詳細機能を追加します。
     }
-    
+
     @Steps {
       @Step {
-        Create a new file called ContactDetailFeature.swift, import the Composable Architecture, and 
-        start a stub of a reducer by using the ``ComposableArchitecture/Reducer()`` macro.
-        
+        `ContactDetailFeature.swift` という新しいファイルを作成して TCA ライブラリをインポートし、 ``ComposableArchitecture/Reducer()`` マクロを付与したスタブの Reducer を記述します。
+
         @Code(name: "ContactDetailFeature.swift", file: 02-04-01-code-0000.swift)
       }
-      
+
       @Step {
-        Add a ``ComposableArchitecture/Reducer/State`` struct to fulfill that requirement for the 
-        ``ComposableArchitecture/Reducer`` protocol. The only state we currently need is the
-        contact, and it can be `let` since we do not plan on mutating it from this screen.
-        
+        ``ComposableArchitecture/Reducer`` プロトコルの要件を満たすために ``ComposableArchitecture/Reducer/State`` 構造体を追加します。
+        現在必要な状態は連絡先のみで、連絡先詳細画面からは連絡先を変更しないため `let` で宣言します。
+
         @Code(name: "ContactDetailFeature.swift", file: 02-04-01-code-0001.swift)
       }
-      
+
       @Step {
-        Add an ``ComposableArchitecture/Reducer/Action`` enum to fulfill that requirement for the
-        ``ComposableArchitecture/Reducer`` protocol. There are not currently any actions that can
-        be performed in this feature, so we will leave it empty.
-        
+        ``ComposableArchitecture/Reducer`` プロトコルの要件を満たすために ``ComposableArchitecture/Reducer/Action`` 列挙型を追加します。
+        連絡先詳細機能で実行するアクションは今のところないため、空のままにします。
+
         @Code(name: "ContactDetailFeature.swift", file: 02-04-01-code-0002.swift)
       }
-      
+
       @Step {
-        Implement a basic ``ComposableArchitecture/Reducer/body-20w8t`` property to fulfill that 
-        requirement of ``ComposableArchitecture/Reducer`` protocol. Since there are no actions in 
-        this feature there is nothing we can do in the reducer. More will be added to this later.
-        
+        ``ComposableArchitecture/Reducer`` プロトコルの要件を満たすために、基本的な ``ComposableArchitecture/Reducer/body-20w8t`` プロパティを実装します。
+        連絡先詳細機能にはアクションがなく Reducer で何も処理しないため、後で追記するようにします。
+
         @Code(name: "ContactDetailFeature.swift", file: 02-04-01-code-0003.swift)
       }
-      
+
       @Step {
-        Create a stub for a `ContactDetailView`.
-        
+        `ContactDetailView` のスタブを作成します。
+
         @Code(name: "ContactDetailFeature.swift", file: 02-04-01-code-0004.swift, reset: true)
       }
-      
+
       @Step {
-        The view will hold onto a ``ComposableArchitecture/Store`` of the 
-        `ContactDetailFeature` domain, allowing it to observe the feature's state changes and 
-        send actions.
-        
+        ビューは `ContactDetailFeature` ドメインの ``ComposableArchitecture/Store`` を保持し、連絡先詳細機能の状態の変更を監視しアクションを送信するようにします。
+
         @Code(name: "ContactDetailFeature.swift", file: 02-04-01-code-0005.swift)
       }
-      
+
       @Step {
-        Stub out a basic form. There is no real information to show in this view now other than the
-        contact's name, but more will be added later.
-        
+        基本的なフォームのスタブを作成します。
+        連絡先名称以外に表示する情報は今のところないので、後で追記します。
+
         @Code(name: "ContactDetailFeature.swift", file: 02-04-01-code-0006.swift)
       }
-      
+
       @Step {
-        Add a preview so that we can see what the view looks like.
-        
+        プレビューで現在のビューを確認します。
+
         @Code(name: "ContactDetailFeature.swift", file: 02-04-01-code-0007.swift) {
           @Image(source: ch02-sub04-sec01-image-0000)
         }
       }
-      
-      Nothing special so far, but we need a basic feature built so that we start pushing it onto
-      a navigation stack.
+
+      ナビゲーションスタックに画面をプッシュする基本的な機能が必要になりました。
     }
   }
-  
-  @Section(title: "Drill-down to contact detail") {
+
+  @Section(title: "連絡先詳細画面への遷移") {
     @ContentAndMedia {
-      Now that a new "Contact Detail" feature has been built we will make it possible to drill
-      down to it from the main list of contacts.
+      連絡先詳細機能を追加したので、メインである連絡先リスト画面から連絡先詳細画面へ遷移できるようにしましょう。
     }
-    
+
     @Steps {
       @Step {
-        Go to ContactsFeature.swift and add a new field to the state. It will be of type 
-        ``ComposableArchitecture/StackState``, generic of the feature that you want to be able to
-        push onto the stack. This state represents the features that are currently
-        pushed onto the stack.
-        
-        > Note: The ``ComposableArchitecture/StackState`` type is specifically made for the 
-        Composable Architecture, and makes it easy and ergonomic to integrate stack navigation
-        into your applications.
-        
+        `ContactsFeature.swift` に移動し、 State に現在ナビゲーションスタックにプッシュされている機能の ``ComposableArchitecture/StackState`` 型のジェネリックを追加します。
+
+        > Note: ``ComposableArchitecture/StackState`` 型は TCA でナビゲーションスタックをアプリケーションに統合しやすくなっています。
+
         @Code(name: "ContactsFeature.swift", file: 02-04-02-code-0000.swift, previousFile: 02-04-02-code-0000-previous.swift) 
       }
-      
+
       @Step {
-        Add a case to the action enum that holds onto ``ComposableArchitecture/StackAction``.
-        This represents the actions that can happen inside the stack, such as pushing or popping
-        an element off the stack, or an action happening inside a particular feature inside the
-        stack.
-        
-        We will also handle the `.path` case in the reducer and return 
-        ``ComposableArchitecture/Effect/none`` for now.
-        
+        Action 列挙型に ``ComposableArchitecture/StackAction`` を保持するケースを追加します。
+        これは、ナビゲーションスタック内で発生するアクション(要素のプッシュやポップ、ナビゲーションスタック内の特定機能で発生するアクションなど)を表します。
+
+        また、 Reducer で追加した `.path` ケースを処理し、 ``ComposableArchitecture/Effect/none`` Effect を返します。
+
         @Code(name: "ContactsFeature.swift", file: 02-04-02-code-0001.swift) 
       }
-      
+
       @Step {
-        At the very end of the reducer use the
-        ``ComposableArchitecture/Reducer/forEach(_:action:destination:fileID:filePath:line:column:)-9svqb`` operator 
-        to integrate the `ContactDetailFeature` into the stack of the `ContactsFeature`.
-        
-        > Tip: Scroll down to the bottom of the code snippet to see the application of the
-        > `forEach` operator.
-        
+        Reducer の最後で ``ComposableArchitecture/Reducer/forEach(_:action:destination:fileID:filePath:line:column:)-9svqb`` 演算子を使用して、 `ContactDetailFeature` を`ContactsFeature` のナビゲーションスタックに統合します。
+
+        > Tip: コードスニペットの一番下までスクロールすると `forEach` 演算子の応用例を参照できます。
+
         @Code(name: "ContactsFeature.swift", file: 02-04-02-code-0002.swift) 
       }
-      
+
       @Step {
-        Go to the `ContactsView` that holds the view for the contacts list. Swap out the
-        `NavigationStack` for ``SwiftUI/NavigationStack/init(path:root:destination:fileID:filePath:line:column:)``, 
-        which is a special initializer that is specifically tuned for driving stacks from a
-        ``ComposableArchitecture/Store``. 
-        You hand it a binding to a store that is scoped down to
-        ``ComposableArchitecture/StackState`` and ``ComposableArchitecture/StackAction``, and it
-        handles the rest.
-        
+        連絡先リスト画面を定義する `ContactsView` に戻ります。
+        `NavigationStack` を ``SwiftUI/NavigationStack/init(path:root:destination:fileID:filePath:line:column:)`` に置き換えます。
+        これは ``ComposableArchitecture/Store`` を持つナビゲーションスタックを動作させるためのイニシャライザです。
+
+        ``ComposableArchitecture/StackState`` と ``ComposableArchitecture/StackAction`` にスコープを限定した Store へのバインドを渡すだけで、他は自動的に処理されます。
+
         @Code(name: "ContactsFeature.swift", file: 02-04-02-code-0003.swift, previousFile: 02-04-02-code-0003-previous.swift) 
       }
-      
+
       @Step {
-        ``SwiftUI/NavigationStack/init(path:root:destination:fileID:filePath:line:column:)`` takes two trailing 
-        closures. The first is for the root of the stack, which is our list of contacts. The second 
-        is to describe the destinations that can be navigated to. It is handled a store that is 
-        focused on the domain of just a single element in the stack.
-        
+        ``SwiftUI/NavigationStack/init(path:root:destination:fileID:filePath:line:column:)`` は2つの Trailing closure を取り、ナビゲーションスタックの単一要素のドメインに限定した Store で処理されます。
+        1つ目にはナビゲーションスタックの Root ビュー(連絡先リスト画面)、2つ目は遷移先ビューを記述します。
+
         @Code(name: "ContactsFeature.swift", file: 02-04-02-code-0004.swift) 
       }
-      
+
       @Step {
-        Wrap the row in the contacts list in a `NavigationLink`, using the special 
-        ``SwiftUI/NavigationLink/init(state:label:fileID:filePath:line:column:)`` initializer that ships with this
-        library. We are also applying a `.borderless` button style so that we can have the delete
-        button in the row too.
-        
-        > Warning: It is necessary to use the
-        > ``SwiftUI/NavigationLink/init(state:label:fileID:filePath:line:column:)`` initializer on `NavigationLink`
-        > instead of the `init(value:)` initializer that comes with SwiftUI.
-        
+        連絡先リストの各行を TCA ライブラリが提供する `NavigationLink` の ``SwiftUI/NavigationLink/init(state:label:fileID:filePath:line:column:)`` イニシャライザでラップします。
+        また、各行にゴミ箱ボタンを配置できるように `.borderless` ボタンスタイルを適用しています。
+
+        > Warning: SwiftUI の `NavigationLink` の `init(value:)` イニシャライザではなく、 TCA ライブラリの ``SwiftUI/NavigationLink/init(state:label:fileID:filePath:line:column:)`` イニシャライザを使用する必要があります。
+
         @Code(name: "ContactsFeature.swift", file: 02-04-02-code-0005.swift, previousFile: 02-04-02-code-0005-previous.swift) 
       }
-      
+
       @Step {
-        Run the application to see that we can now drill down one level, for each contact.
-        
+        アプリケーションを実行し、連絡先リストの1つ下のビュー階層に遷移できることを確認します。
+
         @Video(source: ch02-sub04-sec01-video-0000) 
       }
     }
   }
-    
-  @Section(title: "Deleting a contact") {
+
+  @Section(title: "連絡先の削除") {
     @ContentAndMedia {
-      We now have some drill-down functionality in our contacts app, but currently there is no 
-      interaction between the detail screen and the contacts list. Let's change this by allowing
-      you to delete a contact from the detail screen. We will first prompt the user with an alert
-      asking them to confirm deletion, just as we did in <doc:02-02-MultipleDestinations>.
+      連絡先アプリに連絡先詳細機能を追加しましたが、まだ連絡先詳細画面と連絡先リスト画面間に相互作用がありません。
+      詳細画面から連絡先を削除できるようにしましょう。
+      <doc:02-02-MultipleDestinations> と同様に、まずはユーザにアラートを表示して削除確認を求めるようにします。
     }
-    
+
     @Steps {
       @Step {
-        Go to ContactDetailFeature.swift to add more functionality to the reducer and view. We
-        will start by adding some optional ``ComposableArchitecture/PresentationState`` to represent
-        show the alert.
-        
+        `ContactDetailFeature.swift` に移動し、 Reducer とビューに機能を追加します。
+        まず、アラートを表示するためのオプショナルな ``ComposableArchitecture/PresentationState`` を追加します。
+
         @Code(name: "ContactDetailFeature.swift", file: 02-04-03-code-0000.swift, previousFile: 02-04-03-code-0000-previous.swift) 
       }
-      
+
       @Step {
-        Add cases to `ContactDetailFeature.Action` for all the things the user can do in the UI,
-        such as tapping the "Delete" button, as well as any actions inside the alert and the 
-        delegate actions for when we need to tell the parent feature to delete the contact.
-        
-        > Note: The alert and delegate actions do not need an ID like was needed before. You will
-        > see why soon.
-        
+        `ContactDetailFeature.Action` にゴミ箱ボタンのタップ、アラート内アクション、親機能に連絡先の削除を指示するためのデリゲートアクションといった UI 上でユーザが実行できるすべてのアクションを追加します。
+
+        > Note: 理由は後述しますが、アラートとデリゲートアクションには以前のように連絡先 ID を持たせる必要はありません。
+
         @Code(name: "ContactDetailFeature.swift", file: 02-04-03-code-0001.swift) 
       }
-      
+
       @Step {
-        Implement the new actions in the `body` property. This is very similar to what we did in 
-        <doc:02-02-MultipleDestinations>. We will handle confirming of deletion by sending a 
-        delegate action and dismissing using the ``ComposableArchitecture/DismissEffect`` 
-        dependency, and we have extracted the alert state to its own helper to make it easier to 
-        test later.
-        
+        `body` プロパティで受信アクションに応じたロジックを実装します。
+        これは <doc:02-02-MultipleDestinations> で行ったことと類似しており、削除確認時は親機能にデリゲートアクションを送信し、 ``ComposableArchitecture/DismissEffect`` 依存関係を使用して連絡先詳細画面を閉じます。
+        また、アラート状態を独自のヘルパー関数でセットすることでテスタビリティを向上させています。
+
         @Code(name: "ContactDetailFeature.swift", file: 02-04-03-code-0002.swift) 
       }
-      
+
       @Step {
-        Go to the `ContactDetailView` struct and add a button for deleting the contact, as well as
-        use the `alert(store:)` modifier to show an alert with the `alert` state becomes non-`nil`.
-        
-        @Code(name: "ContactDetailFeature.swift", file: 02-04-03-code-0003.swift, previousFile: 02-04-03-code-0003-previous.swift) 
+        `ContactDetailView` 構造体に移動し、連絡先の削除ボタンを追加します。
+        また、 `alert(store:)` ビュー修飾子を使用して `alert` の状態が `nil` でない値に変更されたときにアラートを表示するようにします。
+
+        @Code(name: "ContactDetailFeature.swift", file: 02-04-03-code-0003.swift, previousFile: 02-04-03-code-0003-previous.swift)
       }
-      
+
       @Step {
-        Go to ContactsFeature.swift and destructure the `.path` action in order to inspect what
-        is happening in each element of the stack. In particular, we want to listen for when a 
-        `.delegate(.confirmDeletion)` action is sent, and in that case remove the contact from the
-        array.
-        
+        `ContactsFeature.swift` に移動し `.path` アクションを通じてナビゲーションスタックに含まれる各階層の状態を取得することができます。
+        ここでは `.delegate(.confirmDeletion)` アクション受信時に配列から連絡先を削除するようにしています。
+
         @Code(name: "ContactsFeature.swift", file: 02-04-03-code-0004.swift, previousFile: 02-04-03-code-0004-previous.swift) 
       }
-      
+
       @Step {
-        Run the preview to see that the application works as expected. You can drill down to a 
-        contact, tap the delete button, confirm deletion, and then the detail is popped off the
-        stack and the contact is removed from the list.
-        
+        プレビューを実行して、アプリケーションが期待通りに動作することを確認します。
+        連絡先詳細画面に遷移し、ゴミ箱ボタンをタップして削除確認を行うと、連絡先詳細画面がナビゲーションスタックからポップされ、連絡先はリストから削除されます。
+
         @Video(source: "ch02-sub04-sec03-video-0000") 
       }
     }

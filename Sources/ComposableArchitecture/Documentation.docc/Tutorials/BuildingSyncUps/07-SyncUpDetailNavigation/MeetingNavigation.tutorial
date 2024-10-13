@@ -1,89 +1,76 @@
 @Tutorial(time: 5) {
-  @Intro(title: "Navigating to a meeting") {
-    Now that we have a navigation stack in place we can start navigating to other features in the
-    application. The simplest is the meeting screen, which allows you to see the details of a 
-    previous recorded meeting.
+  @Intro(title: "ミーティング画面への遷移") {
+    `NavigationStack` を用いてアプリケーション内の他画面に遷移できるようになりました。
+    最も単純なミーティング画面では、以前に記録したミーティングの詳細情報を確認することができます。
   }
-  
-  @Section(title: "The meeting screen") {
+
+  @Section(title: "ミーティング画面") {
     @ContentAndMedia {
-      The meeting screen is a static view that simply displays information. It has no logic or 
-      behavior of its own. And for that reason it's not necessary to create a whole new Composable
-      Architecture feature for this screen. We can use a vanilla SwiftUI view, and then integrate it
-      into the rest of the application.
-      
+      ミーティング画面は情報を表示するだけの静的なビューであり独自のロジックや振る舞いを持たないため、機能を新たに追加する必要はありません。
+      標準の SwiftUI ビューを使用し、アプリケーションに統合することができます。
+
       @Image(source: MeetingNavigation-01-cover.png)
     }
-    
+
     @Steps {
       @Step {
-        Create a new file, Meeting.swift.
-        
+        `Meeting.swift` ファイルを作成します。
+
         @Code(name: "Meeting.swift", file: MeetingNavigation-01-code-0001.swift)
       }
-      
+
       @Step {
-        Create a new `View` conformance for displaying the details of the meeting. We will need to
-        hold onto both a `Meeting` and `SyncUp` so that we can display attendees and transcript.
-        
-        > Note: There's no need for a reducer or a ``ComposableArchitecture/Store`` here since the
-        > view is logic-less and inert. We can have it just hold onto simple data.
-        
+        ミーティング詳細を表示する `View` プロトコルに準拠した構造体を作成します。
+        参加者とトランスクリプトを表示するために、 `Meeting` と `SyncUp` の両方を保持します。
+
+        > Note: このビューにはロジックがなく不活性であるため、 Reducer や ``ComposableArchitecture/Store`` の構築は不要です。
+
         @Code(name: "Meeting.swift", file: MeetingNavigation-01-code-0002.swift)
       }
-      
+
       @Step {
-        Implement the body of the view as a simple form that displays the attendees and transcript.
-        
+        参加者とトランスクリプトを表示する単純なフォームとしてビューの `body` プロパティを実装します。
+
         @Code(name: "Meeting.swift", file: MeetingNavigation-01-code-0003.swift)
       }
     }
   }
-  
-  @Section(title: "Navigate to a meeting") {
+
+  @Section(title: "ミーティング画面への遷移") {
     @ContentAndMedia {
-      With the meeting view in place we can now integrate it 
+      会議ビューが準備できたので、それを統合できます。
     }
-    
+
     @Steps {
       @Step {
-        Go to AppFeature.swift where the `App` reducer is defined. Currently it defines a `Path`
-        reducer that has a case for each feature that can be navigated to in the stack. Currently
-        that's only the detail feature.
-        
+        `App` Reducer を定義した `AppFeature.swift` に移動します。
+        `NavigationStack` から遷移する機能を列挙する `Path` Reducer を宣言していますが、現在は詳細機能にのみ遷移可能です。
+
         @Code(name: "AppFeature.swift", file: MeetingNavigation-02-code-0001.swift)
       }
-      
+
       @Step {
-        Add a case for the meeting view that we want to be able to navigate to. Instead of holding
-        onto the state of some Composable Architecture feature, it can just hold onto the state
-        the `MeetingView` needs to do its job, which is a `Meeting` and a `SyncUp`.
-        
+        遷移させるミーティング画面のケースを追加します。
+        TCA の State の代わりに `MeetingView` が必要とする`Meeting` と `SyncUp` のデータをパラメータにとるようにします。
+
         @Code(name: "AppFeature.swift", file: MeetingNavigation-02-code-0002.swift)
       }
-      
+
       @Step {
-        In the `AppView` we now need to add the `.meeting` case to our `switch` inside the
-        `NavigationStack`. Here we can bind to the data in the `.meeting` case and hand it to the
-        `MeetingView`.
-        
+        `AppView` では `NavigationStack` の `destination` Trailing closure で `.meeting` ケースのデータをバインドし `MeetingView` に渡します。
+
         @Code(name: "AppFeature.swift", file: MeetingNavigation-02-code-0003.swift, previousFile: MeetingNavigation-02-code-0003-previous.swift)
       }
-      
+
       @Step {
-        Next, in SyncUpDetail.swift update the `SyncUpDetailView` to construct a `NavigationLink`
-        to the meeting view. This is done by using the special
-        ``SwiftUI/NavigationLink/init(state:label:fileID:filePath:line:column:)`` initializer that comes with the
-        Composable Architecture.
-        
+        `SyncUpDetail.swift` で `SyncUpDetailView` を修正し、ミーティング画面に遷移する `NavigationLink` を構築します。
+        TCA ライブラリの `NavigationLink` イニシャライザである ``SwiftUI/NavigationLink/init(state:label:fileID:filePath:line:column:)`` を使用します。
+
         @Code(name: "SyncUpDetail.swift", file: MeetingNavigation-02-code-0004.swift, previousFile: MeetingNavigation-02-code-0004-previous.swift)
       }
-      
-      That's all it takes. We can now navigate to any meeting that has been previously recorded.
-      However, we haven't yet implemented the record meeting feature. That is by far the most 
-      complex feature of the app, and is covered in <doc:RecordMeetingFeature>, but before getting 
-      to that let's see what it takes to test features that are integrated together in a navigation 
-      stack.
+
+      過去に記録したミーティング詳細画面に遷移できるようになりましたが、記録機能は未実装です。
+      ミーティング記録機能はアプリの中で最も複雑な機能であり、 <doc:RecordMeetingFeature> で説明していますが、その前に `NavigationStack` で統合した機能のテストを行ってみましょう。
     }
   }
 }

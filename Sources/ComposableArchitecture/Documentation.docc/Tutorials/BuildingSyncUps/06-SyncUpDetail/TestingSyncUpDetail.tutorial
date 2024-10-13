@@ -1,73 +1,64 @@
 @Tutorial(time: 10) {
-  @Intro(title: "Testing the sync-up detail") {
-    The `SyncUpDetail` feature has slowly become quite complex. It now handles two forms of 
-    navigation (an alert and sheet), it models navigation state with a single enum, and it
-    communicates with a parent feature via delegate actions. It's about time we got some test
-    coverage on this feature so we can be sure it works as we expect, and so that we can make future
-    changes with confidence.
+  @Intro(title: "SyncUpDetail のテスト") {
+    `SyncUpDetail` 機能は複雑になり、アラートと編集シート2つの画面遷移先を単一の列挙型でモデル化し、デリゲートアクションを通じて親機能とやりとりしています。
+    将来の変更に強くするため、テストコードを書いてみましょう。
   }
-  
-  @Section(title: "Testing the edit flow") {
+
+  @Section(title: "編集フローのテスト") {
     @ContentAndMedia {
-      Let's start by testing the edit flow. We will exercise the full user flow of tapping the
-      "Edit" button, making some edits, and then committing the edits to the parent features.
+      編集フローのテストから始めましょう。
+      "Edit" ボタンをタップして編集した Sync-up を親画面に反映するユーザフローを実行します。
     }
-    
+
     @Steps {
       @Step {
-        Start by creating a new SyncUpDetailTests.swift file and pasting some basic scaffolding for
-        a new test.
-        
+        `SyncUpDetailTests.swift` ファイルを作成し、テストの基本的な骨組みをペーストします。
+
         @Code(name: "SyncUpDetailTests.swift", file: TestingSyncUpDetail-01-code-0001.swift)
       }
-      
+
       @Step {
-        Create a ``ComposableArchitecture/TestStore`` for the `SyncUpDetail` feature.
-        
+        `SyncUpDetail` 機能の `ComposableArchitecture/TestStore` を構築します。
+
         @Code(name: "SyncUpDetailTests.swift", file: TestingSyncUpDetail-01-code-0002.swift)
       }
-      
+
       @Step {
-        Emulate the user tapping on the "Edit" button and assert that the `destination` state
-        mutates to point to the `.edit` case.
-        
-        Run the test suite to confirm that so far everything passes.
-        
+        ユーザによる "Edit" ボタンのタップをエミュレートするために、 `destination` に `.edit` ケースをセットします。
+
+        テストスイートはパスします。
+
         @Code(name: "SyncUpDetailTests.swift", file: TestingSyncUpDetail-01-code-0003.swift)
       }
-      
+
       @Step {
-        Emulate the user changing the title of the sync-up by sending a deeply nested action for the
-        `.destination`, when it's `.presented`, in the `.edit` case, and then finally a 
-        ``ComposableArchitecture/BindableAction/binding-108e1`` action to set the sync-up.
-        
+        ユーザによる編集シート上での Sync-up タイトルの変更をエミュレートするために、 `.destination.edit` と `ComposableArchitecture/BindableAction/binding-108e1` アクションを用いて子画面での Sync-up の状態変更アクションを送信します。
+
         @Code(name: "SyncUpDetailTests.swift", file: TestingSyncUpDetail-01-code-0004.swift)
       }
-      
+
       @Step {
-        Assert how the state changes after sending the action. In particular, the `syncUp` data
-        inside the `edit` case of the destination should change.
-        
-        Run the test suite again to confirm that everything still passes.
-        
+        子画面から Sync-up の状態変更アクションを受信した後の状態を検査します。
+        子画面の Sync-up を表す `destination.edit.syncUp` の状態を検査します。
+
+        これも、テストスイートはパスします。
+
         @Code(name: "SyncUpDetailTests.swift", file: TestingSyncUpDetail-01-code-0005.swift)
       }
-      
+
       @Step {
-        Finish the user flow by emulating the user tapping on the "Done" button. We expect the
-        `destination` state to be `nil`'d out, which will cause the sheet to be dismissed. And we
-        expect the parent feature's `syncUp` state to be updated with the edited sync-up.
-        
-        Run the test suite to confirm it still passes. 
-        
+        ユーザによる "Done" ボタンのタップ操作をエミュレートし、ユーザによる一連の編集フローを完成させます。
+        `destination` に `nil` をセットし、編集シートが閉じられることを検査します。
+        また、親機能の `syncUp` の状態が、子画面で編集した Sync-up と一致することを検査します。
+
+        テストスイートを実行すると、最後までパスしています。
+
         @Code(name: "SyncUpDetailTests.swift", file: TestingSyncUpDetail-01-code-0006.swift)
       }
-      
-      We have now tested the full user flow of editing a sync-up, and because it passes we can be
-      confident that there are no other state changes happening.
-      
-      It is also possible to shorten this test quite a bit by using a non-exhaustive test store, as
-      we did in <doc:PresentingSyncUpForm>, but we will leave that as an exercise for the reader.
+
+      ユーザによる Sync-up の一連の編集フローをテストしたため、他に状態変更が発生していないことを保証できます。
+
+      <doc:PresentingSyncUpForm> で行ったように、非網羅的 TestStore を用いてテストを簡易的にすることもできますが、読者の演習とします。
     }
-  }  
+  }
 }

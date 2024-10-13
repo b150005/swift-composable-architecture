@@ -1,212 +1,170 @@
 @Tutorial(time: 10) {
-  @Intro(title: "Lists of sync-ups") {
-    We will begin building the SyncUps app from scratch by implementing the feature that powers the
-    list of sync-ups. It starts out as a simple feature, but it will become increasingly complex as
-    the app evolves.
+  @Intro(title: "Sync-up リスト") {
+    SyncUps アプリを TCA ライブラリを用いて構築していきますが、 Sync-up リストを表示する機能の実装から始めます。
+    はじめは単純な機能ですが、チュートリアルが進むにつれて複雑な機能になっていきます。
   }
-  
-  @Section(title: "Domain models") {
+
+  @Section(title: "ドメインモデル") {
     @ContentAndMedia {
-      In order to build a view that shows a list of sync-ups we need to first have some data models
-      that represent a `SyncUp`. So, let's get some models into place.
+      Sync-up リストを表示するビューを構築するために `SyncUp` を表すデータモデルを定義します。
     }
-    
+
     @Steps {
       @Step {
-        Create a Models.swift file where we will house all of the models the app needs to do its
-        job.
-        
+        `Models.swift` ファイルを作成し、データモデルを定義していきます。
+
         @Code(name: "Models.swift", file: ListsOfSyncUps-01-code-0001.swift)
       }
-      
+
       @Step {
-        Copy and paste the following models into Models.swift. This code comes mostly verbatim from
-        Apple's Scrumdinger project.
-        
-        The `SyncUp` type represents a recurring meeting for a set of attendees. The `Meeting` type
-        represents a past recorded meeting, and includes a transcript if we were able to transcribe
-        the meeting.
-        
+        Apple の Scrumdinger プロジェクトを参考にして作られたデータモデルを `Models.swift` にペーストします。
+
+        `SyncUp` 型は参加者を持ち、定期的に行われるミーティングを表します。
+        `Meeting` 型は過去のミーティングを表し、文字起こし機能によって生成されたトランスクリプトを含みます。
+
         @Code(name: "Models.swift", file: ListsOfSyncUps-01-code-0002.swift)
       }
-      
-      While these models would work well enough in our SyncUps application, we can do better. First
-      it is not ideal to hold onto plain arrays in our domain. This leads us to a situation of 
-      referring to attendees and meetings by their positional index in the array, rather than their
-      inherent ID, as given by the `Identifiable` protocol. This becomes especially problematic when
-      performing asynchronous effects in which the position of a value can change while the effect
-      is being performed, making it possible to refer to the wrong value, leading to bugs, or a
-      nonexistent value, leading to crashes.
-      
-      For this reason we recommend using our [`IdentifiedArray`][identified-array-gh] type, which
-      behaves like an array, but allows you to refer to elements by their ID rather than their
-      positional index in the collection.
-      
+
+      これらのデータモデルは SyncUps アプリケーションで十分に動作しますが、いくつか改善点があります。
+      まず、ドメイン内で単純な配列を保持してしまうと `Identifiable` プロトコルによって与えられる固有の ID ではなく、配列のインデックスを指定しなければならず、非同期 Effect を実行する際に問題になります。
+      Effect の実行中に要素のインデックスが変更される可能性があるため、間違った値を参照したり、バグを引き起こしたり、存在しない値を参照してクラッシュを引き起こしたりする可能性があります。
+
+      そのため、配列ではなく [`IdentifiedArray`][identified-array-gh] 型を使用することで、インデックスではなく ID で要素を参照するようにします。
+
       [identified-array-gh]: http://github.com/pointfreeco/swift-identified-collections
-      
+
       @Step {
-        Replace all plain arrays with an `IdentifiedArray`. This type comes from our 
-        [IdentifiedCollections][identified-array-gh] library, which is automatically included with
-        the Composable Architecture.        
-        
+        すべての配列を `IdentifiedArray` に置き換えます。
+        この型は [IdentifiedCollections][identified-array-gh] ライブラリによって提供されていますが、 TCA ライブラリ内に依存関係を持っています。
+
         [identified-array-gh]: http://github.com/pointfreeco/swift-identified-collections
-        
+
         @Code(name: "Models.swift", file: ListsOfSyncUps-01-code-0003.swift)
-      }      
+      }
     }
   }
-    
-  @Section(title: "SyncUpsList feature") {
+
+  @Section(title: "SyncUpsList 機能") {
     @ContentAndMedia {
-      Now that the core domain types are added to the project we can start building out our first
-      feature: the SyncUps list. This is the feature that displays a list of all the sync-ups, and 
-      eventually it will contain quite a bit of functionality, such as creating new sync-ups and
-      drilling down to existing sync-ups.
-      
-      But for now we will concentrate on just two very basic forms of functionality: displaying the
-      list, and allowing the user to swipe to delete a sync-up.
-      
+      コアドメインのデータモデルを定義したので、最初の機能である SyncUps リスト機能を実装します。
+      この機能はすべての Sync-up を表示し、最終的に Sync-up の追加や詳細表示など、他の機能を追加していきます。
+
+      まずは Sync-up リストの表示と、スワイプによる Sync-up の削除機能を追加します。
+
       @Image(source: "ListsOfSyncUps-cover.png")
     }
-    
+
     @Steps {
       @Step {
-        Create a new file for the feature called SyncUpsList.swift. We will also preemptively import
-        the Composable Architecture and SwiftUI since we know we will need access to those
-        libraries.
-        
+        `SyncUpsList.swift` というファイルを作成し、 TCA と SwiftUI ライブラリをインポートします。
+
         @Code(name: "SyncUpsList.swift", file: ListsOfSyncUps-02-code-0001.swift)
       }
-      
-      We will start with implementing the reducer for the feature. This isn't always necessary or
-      even preferred. It can also work well to start by sketching out the view hierarchy for your
-      view, and then implementing the reducer.
-      
+
+      Reducer とビューの実装が必要ですが、ここでは Reducer の実装を先に進めます。
+
       @Step {
-        Add a struct called `SyncUpsList` and annotate it with the 
-        ``ComposableArchitecture/Reducer()`` macro. This type will encapsulate the domain of the 
-        feature and implement its logic and behavior.
-        
+        `SyncUpsList` 構造体を追加し、 ``ComposableArchitecture/Reducer()`` マクロのアノテーションを付与します。
+        `SyncUpsList` 構造体は機能のドメイン(State と Action を含む Reducer)をカプセル化し、そのロジックと振る舞いを定義します。
+
         @Code(name: "SyncUpsList.swift", file: ListsOfSyncUps-02-code-0002.swift)
       }
-      
+
       @Step {
-        Add an inner `State` type to represent the data the feature needs to do its job. Right now
-        that can just be the collection of `SyncUp`s in the list. We will also mark the `State`
-        type with the ``ComposableArchitecture/ObservableState`` macro so that the view can 
-        automatically observe changes to state.
-        
-        > Note: We are preemptively making `State` conform to `Equatable` because it will be useful
-        > for tests later in this tutorial.
-        
+        機能を動作させるために必要なデータを表す `State` を `SyncUpsList` 構造体の内部に追加しますが、現時点では `SyncUp` の配列だけ宣言します。
+        また、 SwiftUI ビューが状態の変更を監視できるように `State` 型に ``ComposableArchitecture/ObservableState`` マクロを付与します。
+
+        > Note: テストに向けて `State` は予め `Equatable` に準拠させます。
+
         @Code(name: "SyncUpsList.swift", file: ListsOfSyncUps-02-code-0003.swift)
       }
-      
-      Next we add an `Action` enum to represent all of the actions the user can perform in the UI.
-      Right now there are only 3 actions: they can tap the "+" button in the top-right of the
-      navigation toolbar, they can tap a sync-up in the list, or they can swipe-to-delete on a row.
-      
+
+      次に、ユーザが UI 上で実行するすべてのアクションを定義する `Action` 列挙型を追加しますが、現時点では以下の3つのアクションのみ宣言します。
+      - ナビゲーションツールバーの "+" ボタンのタップ
+      - リストの Sync-up のタップ
+      - リストの任意の行のスワイプによる削除
+
       @Step {
-        Add an `Action` enum with a case for each action the user can perform in the UI.
-        
-        > Important: As we saw in <doc:MeetComposableArchitecture>, we prefer to name our actions
-        > after exactly what happens in the view rather than what logic we want to execute. So we
-        > prefer `addSyncUpButtonTapped` over something like `showAddSheet`.
-        
+        ユーザが UI 上で実行する各アクションケースを `Action` 列挙型に追加します。
+
+        > Important: <doc:MeetComposableArchitecture> で紹介したように、アクション名は実行したいロジックではなく、ビューで起こる現象に基づいて命名することを推奨します。
+        > 例えば、 "+" ボタンタップのアクション名は `showAddSheet` ではなく `addSyncUpButtonTapped` にします。
+
         @Code(name: "SyncUpsList.swift", file: ListsOfSyncUps-02-code-0004.swift)
       }
-      
+
       @Step {
-        Implement the ``ComposableArchitecture/Reducer/body-20w8t`` of the reducer by using the 
-        ``ComposableArchitecture/Reduce`` type to implement each action. We will leave the 
-        `addSyncUpButtonTapped` and `syncUpTapped` actions unimplemented for now since it requires
-        more work to present a sheet and drill down to a sync-up.
-        
-        > Note: Due to a bug in the Swift compiler it can often happen that you lose type inference
-        > inside `Reduce`. If that happens you can specify the generics to restore inference and
-        > autocomplete: `Reduce<State, Action>`.
-        
+        Reducer の ``ComposableArchitecture/Reducer/body-20w8t`` プロパティでは ``ComposableArchitecture/Reduce`` 型を使用して各アクションに対する振る舞いを実装します。
+        `addSyncUpButtonTapped` と `syncUpTapped` アクションについては、シートを表示したり Sync-up 詳細画面に遷移したりと追加作業が生まれるので、現時点では何も実装しません。
+
+        > Note: Swift コンパイラのバグによって `Reduce` 内で型推論が行われないことがありますが、その場合はジェネリクスとして `Reduce<State, Action>` を指定することで型推論とオートコンプリートが行われるようにできます。
+
         @Code(name: "SyncUpsList.swift", file: ListsOfSyncUps-02-code-0005.swift)
       }
-      
-      That is all that is necessary for the `SyncUpsList` reducer for now. Later we will compose
-      more reducers into this body to handle more functionality.
-      
-      Next, let's implement the view that will be powered by the `SyncUpsList` reducer. We will
-      need some helpers to break down the list view since it's quite complex, and most of these
-      helpers we will be taking directly from Apple's Scrumdinger code with few modifications.
-      
+
+      `SyncUpsList` Reducer の土台が完成しましたが、後で別の Reducer を統合します。
+
+      次に、 `SyncUpsList` Reducer を動作させるためのビューを実装します。
+      本来であればリストビューは複雑なビューなのでヘルパー関数を作成する必要がありますが、 Apple の Scrumdinger プロジェクトから流用します。
+
       @Step {
-        Add a `CardView` that represents a single row in the list of sync-ups.  
-        
-        > Note: We are omitting the implementation of the `SyncUpsList` reducer to keep the code
-        > snippet short. You are also free to put the reducer and view in separate files, but we
-        > like to keep them in the same file until it becomes untenable.
-        
+        リストの各 Sync-up を表示するための `CardView` を追加します。
+
+        > Note: Reducer とビューを別々のファイルに配置することもできますが、扱いきれなくなるまでは同じファイルに記述することを推奨します。
+
         @Code(name: "SyncUpsList.swift", file: ListsOfSyncUps-02-code-0006.swift, previousFile: ListsOfSyncUps-02-code-0006-previous.swift)
       }
-      
+
       @Step {
-        Add a `SyncUpsListView` that holds onto a ``ComposableArchitecture/Store`` of the 
-        `SyncUpsList` domain.
-        
+        `SyncUpsList` ドメインの ``ComposableArchitecture/Store`` を保持する `SyncUpsListView` を追加します。
+
         @Code(name: "SyncUpsList.swift", file: ListsOfSyncUps-02-code-0007.swift)
       }
-      
+
       @Step {
-        Implement the `body` of the view as a `List` with a `ForEach` that iterates over the
-        collection of sync-ups. We will also add a button to the toolbar that will eventually
-        present a sheet for adding a new sync-up. Since we marked the `State` type with the
-        ``ComposableArchitecture/ObservableState`` macro we can access state directly in the
-        `store` and send actions to it.
-        
-        > Note: In order to get the colors for each `Theme` value you will need to copy the 
-        > [Assets.xcassets][assets] from the completed demo project into your project.
-        
+        ビューの `body` は Sync-up コレクションを反復的に表示する `List` ビューにします。
+        また、 Sync-up を追加するためのシートを表示するボタンをツールバーに追加します。
+        `State` に ``ComposableArchitecture/ObservableState`` マクロを付与したので、このビューは `store` が保持する State を直接参照し、 Action を送信することができます。
+
+        > Note: 完成後の SyncUps デモプロジェクトから [Assets.xcassets][assets] をコピーすることで、 `Theme` の色を取得できます。
+
         [assets]: https://github.com/pointfreeco/swift-composable-architecture/tree/main/Examples/SyncUps/SyncUps/Assets.xcassets
-        
+
         @Code(name: "SyncUpsList.swift", file: ListsOfSyncUps-02-code-0008.swift)
       }
-      
+
       @Step {
-        With that done we can set up a preview. Add a `#Preview` down at the bottom of the file.
-        To construct a `SyncUpsListView` you need to construct a ``ComposableArchitecture/Store`` 
-        of the `SyncUpsList` feature. This is done by providing the initial state of the feature,
-        and we can even pre-populate it with a `SyncUp` in the array, as well as specifying the 
-        reducer that will power the feature.
-        
+        ファイル下部に `#Preview` マクロを追加してプレビューを構築します。
+        `SyncUpsListView` を構築するには `SyncUpsList` 機能の ``ComposableArchitecture/Store`` と Reducer を指定する必要があります。
+        また、 `SyncUpsList` 機能の初期状態として `SyncUp` の配列をセットすることもできます。
+
         @Code(name: "SyncUpsList.swift", file: ListsOfSyncUps-02-code-0009.swift)
       }
-      
+
       @Step {
-        Run the preview to see that the list of sync-ups shows with one single sync-up already 
-        populated in the list. You can also swipe on the row to delete it.
-        
+        プレビューを実行して、1つの Sync-up が追加された状態で Sync-up リストが表示されることを確認します。
+        行をスワイプしてその Sync-up を削除することもできます。
+
         @Video(source: ListsOfSyncUps-02-code-0010.mp4)
       }
     }
   }
-  
-  @Section(title: "A handy debugging tool") {
+
+  @Section(title: "便利なデバッグツール") {
     @ContentAndMedia {
-      With this little bit of work done we can already demonstrate a powerful debugging tool of the
-      Composable Architecture. It is possible to print a nicely formatted diff of your features'
-      state whenever it is mutated.
+      状態変化を検知し、フォーマットされた差分を出力する TCA のデバッグツールを紹介します。
     }
-    
+
     @Steps {
       @Step {
-        At the bottom of the file, where the `#Preview` is constructed, apply the `_printChanges()`
-        reducer operator to `SyncUpsList`. 
-        
+        `#Preview` で指定した `SyncUpsList` Reducer に `_printChanges()` 演算子を適用します。
+
         @Code(name: "SyncUpsList.swift", file: ListsOfSyncUps-03-code-0001.swift, previousFile: ListsOfSyncUps-03-code-0001-previous.swift)
       }
-      
+
       @Step {
-        Run the preview again and delete the row. View the logs in the console to see that a nicely
-        formatted message has been printed to the console to show what action was sent and how the
-        state changed.
-        
+        プレビューで再度 Sync-up を削除すると、コンソールのログには送信された Action と State の変化点が出力されるようになりました。
+
         @Code(name: "console-output.diff", file: ListsOfSyncUps-03-code-0002.diff)
       }
     }

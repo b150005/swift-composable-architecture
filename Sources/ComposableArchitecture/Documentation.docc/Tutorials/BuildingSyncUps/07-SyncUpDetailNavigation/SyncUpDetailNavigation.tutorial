@@ -1,289 +1,221 @@
 @Tutorial(time: 20) {
-  @Intro(title: "Navigating to a sync-up detail") {
-    We will wrap the application built so far in a `NavigationStack` so that we can navigate to
-    the detail screen. To do this we will create a new root-level feature that will be responsible
-    for implementing the logic of the stack and integrating all of the features together.
+  @Intro(title: "Sync-up 詳細画面への遷移") {
+    これまでに構築した画面を `NavigationStack` でラップし、詳細画面に遷移できるようにします。
+    `NavigationStack` で全ての機能を統合するため、 Root となる親機能を作成します。
   }
-  
-  @Section(title: "Creating the app feature") {
+
+  @Section(title: "アプリケーション機能の作成") {
     @ContentAndMedia {
-      Let's create a new feature to hold the `NavigationStack`.
+      `NavigationStack` をもつ新機能を作成します。
     }
-    
+
     @Steps {
       @Step {
-        Create a new file called App.swift and paste in the basic scaffolding of a new 
-        Composable Architecture feature.
-        
-        > Note: You may already have an App.swift in your project that holds the entry point of
-        the application (i.e. `@main`). If so, you can name this file AppFeature.swift, or you can
-        rename the entry point to Main.swift.
+        `App.swift` ファイルを作成し、 TCA の土台をペーストします。
+
+        > Note: プロジェクトにすでにアプリケーションのエントリーポイント(`@main` を含む) `App.swift` がある場合は `AppFeature.swift` と名付けるか、既存の `App.swift` を `Main.swift` に名前変更してください。
         >
-        > We often leave out suffixing reducers with names like "feature" or "reducer", but in this
-        > case we must avoid conflicting with SwiftUI's
-        > [App](https://developer.apple.com/documentation/swiftui/app) protocol, so we'll use
-        > `AppFeature`, instead.
+        > Reducer に "Feature" や "Reducer" などの接尾辞をつけるべきではありませんが、 SwiftUI の [App](https://developer.apple.com/documentation/swiftui/app) プロトコルとの競合を避けるため `AppFeature` と命名しています。
 
         @Code(name: "App.swift", file: SyncUpDetailNavigation-01-code-0001.swift)
       }
-      
-      This feature's primary responsibility will be to integrate all the features that can be 
-      presented in the navigation stack. Currently that is only the `SyncUpsList` feature, which
-      is always at the root of the stack, and the `SyncUpDetail` feature. Soon there will be more
-      features that can be presented in the stack, such as the record meeting feature and the past
-      meeting feature.
-      
-      The sync-ups list feature is a little different from all of those other features, though.
-      It is at the root of the stack, and it can not be dismissed. For that reason it is composed
-      into the `AppFeature` by simply holding onto its state and actions, and using the 
-      ``ComposableArchitecture/Scope`` reducer to compose it into `AppFeature`'s `body`.
-      
+
+      この機能の主な責務は `NavigationStack` で表示するすべての機能を統合することであり、現在は `SyncUpsList` と `SyncUpDetail` の2機能が該当します。
+      将来的にはミーティングの記録や過去のミーティングの表示など、 `NavigationStack` で表示する対象機能が増えることが予想されます。
+
+      SyncUpsList 機能は `NavigationStack` の Root にあり、閉じることができない点で他の機能とは異なります。
+      そのため、親機能には SyncUpsList の State と Action を持たせ、 ``ComposableArchitecture/Scope`` Reducer を用いて `AppFeature` の `body` に直接組み込みます。
+
       @Step {
-        Integrate the `SyncUpsList` reducer into the `AppFeature` by holding onto its state and
-        actions, and using the ``ComposableArchitecture/Scope`` reducer to compose the two
-        reducers together.
-        
+        `SyncUpsList` Reducer の State と Action を保持し、 ``ComposableArchitecture/Scope`` Reducer と AppFeature の Reducer を組み合わせて `AppFeature` に統合します。
+
         @Code(name: "App.swift", file: SyncUpDetailNavigation-01-code-0002.swift)
       }
-      
-      Next we want to integrate the `SyncUpDetail` reducer into the `AppFeature`. The library comes
-      with specific tools to do this for navigation stacks. It starts by using 
-      ``ComposableArchitecture/StackState``, which is a collection type provided by the library
-      specifically tuned for dealing with navigation stacks.
-      
+
+      次に、 `SyncUpDetail` Reducer を `AppFeature` に統合します。
+      TCA ライブラリには `NavigationStack` の処理に特化した ``ComposableArchitecture/StackState`` というコレクション型が用意されています。
+
       @Step {
-        Integrate the state of `SyncUpDetail` in `AppFeature` by holding onto 
-        ``ComposableArchitecture/StackState``. We like to call this variable `path` since it mimics
-        the `NavigationStack(path:)` API in SwiftUI.
-        
+        `SyncUpDetail` の State を `AppFeature` に統合するために ``ComposableArchitecture/StackState`` 型の `path` を保持します。
+        この命名は SwiftUI の `NavigationStack(path:)` API に由来させています。
+
         @Code(name: "App.swift", file: SyncUpDetailNavigation-01-code-0003.swift)
       }
-      
-      However, this is not quite right. We don't want to _only_ show the `SyncUpDetail` in the 
-      navigation stack. Soon we will have a `RecordMeeting` feature, and a `Meeting` feature, 
-      and in the future there may be more.
-      
-      For this reason it is best to do some upfront work to model a feature that can handle any
-      number of features on the stack. This works much like the `Destination` reducer we created
-      in <doc:EditingAndDeletingSyncUp>.
-      
-      @Step {
-        Create a new `Path` reducer inside `AppFeature`. Like the `Destination` reducer we defined for the
-        sync-up detail screen, `Path` type will be an _enum_ so that it can compose all of the
-        screens you can navigate to into a single reducer.
 
-        @Code(name: "App.swift", file: SyncUpDetailNavigation-01-code-0004.swift)        
-      }
-      
-      @Step {
-        Add a case to the path for the `SyncUpDetail` feature. In the future more cases will be
-        added to this enum for each kind of feature that can be pushed onto the stack.
-        
-        @Code(name: "App.swift", file: SyncUpDetailNavigation-01-code-0005.swift)        
-      }
-      
-      That's all it takes to create a single reducer that encapsulates all of the logic and behavior
-      of each screen in the navigation stack. In the future as we add more screens to the stack
-      we will just add more cases to this reducer.
-      
-      Next we will integrate the `Path` reducer into the `AppFeature` reducer.
-      
-      @Step {
-        Update the `path` variable to hold onto ``ComposableArchitecture/StackState`` of 
-        `Path.State`.
-        
-        > Important: In order to maintain `State`'s `Equatable`, we must conform `Path.State` to be
-        > `Equatable` as well.
+      `NavigationStack` には `SyncUpDetail` 以外にも `RecordMeeting` や `Meeting` 機能を表示させますが、将来的には表示する機能がさらに増える可能性もあります。
 
-        @Code(name: "App.swift", file: SyncUpDetailNavigation-01-code-0006.swift)        
-      }
-      
+      そのため、 `NavigationStack` で任意の数の機能を扱えるようにモデル化します。
+      これは、 <doc:EditingAndDeletingSyncUp> の `Destination` Reducer と同様です。
+
       @Step {
-        Integrate the `Path`'s actions into `AppFeature` by adding a case to its `Action` enum, and using
-        the ``ComposableArchitecture/StackAction``. We can use the
-        ``ComposableArchitecture/StackActionOf`` type alias to specify a single generic of the path
-        reducer.
-        
+        `AppFeature` 内に `Path` Reducer を作成します。
+        Sync-up 詳細画面で定義した `Destination` Reducer と同様、 `Path` 型は列挙型として宣言し、遷移可能なすべての画面を単一の Reducer として構成します。
+
+        @Code(name: "App.swift", file: SyncUpDetailNavigation-01-code-0004.swift)
+      }
+
+      @Step {
+        `SyncUpDetail` に遷移させるため、 `Path` に Reducer をパラメータにもつケースを追加します。
+        将来的にはこの `Path` 列挙型にケースを追加して `NavigationStack` でプッシュする機能を追加していきます。
+
+        @Code(name: "App.swift", file: SyncUpDetailNavigation-01-code-0005.swift)
+      }
+
+      `NavigationStack` 内の各画面のロジックと振る舞いをカプセル化した単一の Reducer を作成しました。
+      `NavigationStack` に新しく画面を追加する場合は、この Reducer にケースを追加するだけです。
+
+      次に、 `Path` Reducer を `AppFeature` Reducer に統合します。
+
+      @Step {
+        `path` 変数を更新して、 `Path.State` の ``ComposableArchitecture/StackState`` を保持するようにします。
+
+        > Important: 遷移先の `State` が `Equatable` であることを保証するために `Path.State` を型拡張して `Equatable` に準拠させます。
+
+        @Code(name: "App.swift", file: SyncUpDetailNavigation-01-code-0006.swift)
+      }
+
+      @Step {
+        `Action` 列挙型に ``ComposableArchitecture/StackAction`` をパラメータにとる `Path` のアクションケースを追加し、 `AppFeature` に統合します。
+        ``ComposableArchitecture/StackActionOf`` を用いて `Path` Reducer の Action を単一のジェネリックなタイプエイリアスとして定義します。
+
         @Code(name: "App.swift", file: SyncUpDetailNavigation-01-code-0007.swift)
-        
-        > Note: Right now we don't need to perform any logic in the `.path` action so we can return
-        > `.none` in it.
+
+        > Note: 現時点では `.path` アクションで実行するロジックがないため `.none` Effect を返しています。
       }
-      
-      ``ComposableArchitecture/StackAction`` is a type that represents the most 
-      fundamental things that can happen in a stack: an element in the stack can send an action
-      (``ComposableArchitecture/StackAction/element(id:action:)``), or it can push an element
-      onto the stack (``ComposableArchitecture/StackAction/push(id:state:)``), or it can
-      pop an element from the stack (``ComposableArchitecture/StackAction/popFrom(id:)``).
-      
+
+      ``ComposableArchitecture/StackAction`` は `NavigationStack` で発生する、以下のような基本的なアクションを表現する型です。
+      - NavigationStack 内の要素がアクションを送信する(``ComposableArchitecture/StackAction/element(id:action:)``)
+      - NavigationStack に要素をプッシュする(``ComposableArchitecture/StackAction/push(id:state:)``)
+      - NavigationStack から要素をポップする(``ComposableArchitecture/StackAction/popFrom(id:)``)
+
       @Step {
-        Integrate the `Path` reducer into the `body` of the `AppFeature` reducer by using the 
-        ``ComposableArchitecture/Reducer/forEach(_:action:)`` operator.
-        
+        ``ComposableArchitecture/Reducer/forEach(_:action:)`` 演算子を用いて `Path` Reducer を `AppFeature` Reducer の `body` に統合します。
+
         @Code(name: "App.swift", file: SyncUpDetailNavigation-01-code-0008.swift)
       }
-      
-      The ``ComposableArchitecture/Reducer/forEach(_:action:)`` 
-      operator takes care of processing an incoming ``ComposableArchitecture/StackAction``, routing
-      it to the current reducer in the stack, and automatically cancelling effects when a feature
-      is popped from the stack.
-      
-      That is all it takes to create the `AppFeature` reducer and integrate the `SyncUpDetail` into the
-      stack. Next We will create the view layer.
+
+      ``ComposableArchitecture/Reducer/forEach(_:action:)`` 演算子は受信した ``ComposableArchitecture/StackAction`` を処理し、 NavigationStack 内の Reducer にルーティングし、機能が `NavigationStack` からポップした場合(= 遷移先の子画面が非表示になった場合)は自動的に実行中の Effect をキャンセルします。
+
+      `AppFeature` Reducer を作成し `SyncUpDetail` を `NavigationStack` に統合したため、次に、ビュー階層を構築します。
     }
   }
-  
-  @Section(title: "Creating the app view") {
+
+  @Section(title: "アプリケーションビューの作成") {
     @ContentAndMedia {
-      Let's create the view that holds onto the `NavigationStack`.
+      `NavigationStack` を保持するビューを作成します。
     }
-    
+
     @Steps {
       @Step {
-        Create a new `AppView` struct to conform to the `View` protocol in SwiftUI.
+        SwiftUI の `View` プロトコルに準拠した `AppView` 構造体を作成します。
 
         @Code(name: "App.swift", file: SyncUpDetailNavigation-02-code-0001.swift, previousFile: SyncUpDetailNavigation-02-code-0001-previous.swift)        
       }
-      
+
       @Step {
-        Add a `store` property to the view. We are going to be proactive and make the property
-        `@Bindable` because we will need to derive a binding to it for the `NavigationStack`.
-        
+        ビューに `@Bindable` を付与した `store` プロパティを追加し、 `NavigationStack` の機能とビューをバインドできるようにします。
+
         @Code(name: "App.swift", file: SyncUpDetailNavigation-02-code-0002.swift)
       }
-      
+
       @Step {
-        Implement the `body` of the view by constructing a `NavigationStack`, but we will be using
-        special initializer that comes with the library:
-        ``SwiftUI/NavigationStack/init(path:root:destination:fileID:filePath:line:column:)``. This initializer takes 
-        a binding to a store focused on the stack domain, as well as two trailing closures. The 
-        first for the root view that is always present, and the second for the destinations that 
-        can be  pushed onto the stack.
-        
+        `NavigationStack` は TCA ライブラリの ``SwiftUI/NavigationStack/init(path:root:destination:fileID:filePath:line:column:)`` イニシャライザを用いてビューの `body` を構築します。
+        このイニシャライザは `NavigationStack` ドメインにスコープを限定した Store と2つの Trailing closure を取り、1つ目のクロージャは Root ビューを、2つ目のクロージャは `NavigationStack` にプッシュする遷移先ビューに適用する処理を記述します。
+
         @Code(name: "App.swift", file: SyncUpDetailNavigation-02-code-0003.swift)
       }
-      
+
       @Step {
-        For the root view we can construct the `SyncUpsListView` by using 
-        ``ComposableArchitecture/Store/scope(state:action:)-90255`` on the `store` to isolate
-        the `SyncUpsList` domain.
-        
+        1つ目のクロージャに記述する Root ビューは、 ``ComposableArchitecture/Store/scope(state:action:)-90255`` を用いて `SyncUpsList` ドメインに分離した Store をもつ `SyncUpsListView` を構築します。
+
         @Code(name: "App.swift", file: SyncUpDetailNavigation-02-code-0004.swift)
       }
-      
+
       @Step {
-        The `destination` trailing closure is handed a `store` focused on the path's state, which
-        is an enum. Because we are using the ``Reducer()`` macro on a `Path` enum we get access
-        to a special super power of enum reducers. We can switch on `store.case` to destructure
-        a child store for each case of the enum.
-        
-        See <doc:Reducer#Destination-and-path-reducers> for more information on this tool.
-        
+        2つ目のクロージャには `path` にスコープが限定された `store` 列挙型オブジェクトが渡され、 `store.case` を通じて子機能の Store にアクセスできます。
+        `Path` 列挙型に ``Reducer()`` マクロを付与しているため子 Store にアクセスできるようになっています。
+
+        列挙型 Reducer の詳細については <doc:Reducer#Destination-and-path-reducers> を参照してください。
+
         @Code(name: "App.swift", file: SyncUpDetailNavigation-02-code-0005.swift)
       }
-      
+
       @Step {
-        For each case in the enum we will destructure the store and construct the corresponding
-        destination view by handing the store to the view.
-        
+        `Path` 列挙型で定義した各 Store を遷移先ビューに渡し、子画面を構築します。
+
         @Code(name: "App.swift", file: SyncUpDetailNavigation-02-code-0006.swift)
       }
-      
+
       @Step {
-        Add a preview to the bottom of the file.
-        
+        プレビューを追加します。
+
         @Code(name: "App.swift", file: SyncUpDetailNavigation-02-code-0007.swift)
       }
-      
-      That's all it takes to build the root `AppView` that holds onto a `NavigationStack`. But
-      currently we do not have any buttons to actually navigate to the detail screen from the list
-      screen.
+
+      `NavigationStack` を保持する Root ビューとなる `AppView` を構築しましたが、現時点では Sync-up リスト画面から詳細画面に画面遷移するためのボタンはありません。
     }
   }
-  
-  @Section(title: "Navigating to the detail") {
+
+  @Section(title: "Sync-up 詳細画面への遷移") {
     @ContentAndMedia {
-      To navigate to the detail screen from the list screen we need to append some 
-      `SyncUpDetail.State` to the `path` of the `App` feature. The easiest way to do this is with
-      a `NavigationLink`, which will automatically append some state to the path when tapped.
+      リスト画面から詳細画面に画面遷移するには `AppFeature` の `path` に `SyncUpDetail.State` をセットする必要がありますが、最も簡単なのは `NavigationLink` を用いてタップ時に自動的に `path` に状態をセットする方法です。
     }
-    
+
     @Steps {
       @Step {
-        Go to the SyncUpsList.swift file where the `SyncUpListView` is defined. In that view we 
-        currently have a `Button` in the list. Let's now replace it with a `NavigationLink`, but
-        using the special initializer that comes with this library: 
-        ``SwiftUI/NavigationLink/init(state:label:fileID:filePath:line:column:)``.
-        
-        @Code(name: "SyncUpsList.swift", file: SyncUpDetailNavigation-03-code-0001.swift, previousFile: SyncUpDetailNavigation-03-code-0001-previous.swift))
+        `SyncUpListView` を定義した `SyncUpsList.swift` ファイルに移動するとリスト画面内に `Button` があるので、 TCA ライブラリの `NavigationLink` イニシャライザである ``SwiftUI/NavigationLink/init(state:label:fileID:filePath:line:column:)`` で置き換えます。
+
+        @Code(name: "SyncUpsList.swift", file: SyncUpDetailNavigation-03-code-0001.swift, previousFile: SyncUpDetailNavigation-03-code-0001-previous.swift)
       }
-      
-      This special initializer takes a piece of state that matches the type that is held in the 
-      root feature's ``ComposableArchitecture/StackState``. In our case, that is `AppFeature.Path.State`,
-      which is an enum of all the possible destinations that can be navigated to.
-      
+
+      このイニシャライザでは、 Root 機能で定義した ``ComposableArchitecture/StackState`` が保持する型に一致する状態を指定します。
+      今回の例では `AppFeature.Path.State` に一致する `SyncUpDetail` の状態を渡します。
+
       @Step {
-        Provide `Path.State.detail` to the `NavigationLink` to indicate that we want to 
-        navigate to the detail feature.
-        
+        Sync-up 詳細機能への画面遷移であるため、 `NavigationLink` の `state` パラメータには `Path.State.detail` を渡します。
+
         @Code(name: "SyncUpsList.swift", file: SyncUpDetailNavigation-03-code-0002.swift)
       }
-      
-      However, to construct `SyncUpDetail.State` we need to provide a `Shared<SyncUp>` value.
-      This needs to be derived from the shared sync-ups held in `SyncUpsList.State` so that the
-      detail feature can be allowed to make edits to the state have those edits be automatically
-      made to `SyncUpsList.State`.
-      
-      One can use the projected value of [`@Shared`](<doc:Shared>) along with the 
-      ``ComposableArchitecture/Shared/elements`` property defined on shared collections in order to
-      derive a `Shared` value for each element in the collection.
-      
+
+      ここで `SyncUpDetail.State` の構築時に `Shared<SyncUp>` 値が必要ですが `SyncUpsList.State` の `syncUps` を共有状態として指定することで、詳細機能から状態の編集と `SyncUpsList.State` への反映を可能にします。
+
+      ``ComposableArchitecture/Shared/elements`` プロパティを通じて [`@Shared`](<doc:Shared>) アノテーションを付与した `Shared` のバインド値を使用できます。
+
       @Step {
-        Use the ``ComposableArchitecture/Shared/elements`` property in the `ForEach` to derive a
-        `Shared<SyncUp>` for each element in the `Shared<IdentifiedArrayOf<SyncUp>>`.
+        `ForEach` に ``ComposableArchitecture/Shared/elements`` プロパティを渡し、 `Shared<IdentifiedArrayOf<SyncUp>>` の要素である `Shared<SyncUp>` にアクセスできるようにします。
+
         @Code(name: "SyncUpsList.swift", file: SyncUpDetailNavigation-03-code-0003.swift)
       }
-      
+
       @Step {
-        Pass the projected value `$syncUp` to `SyncUpDetail.State`.
-        
+        `$syncUp` を `SyncUpDetail.State` に渡します。
+
         @Code(name: "SyncUpsList.swift", file: SyncUpDetailNavigation-03-code-0004.swift)
       }
-      
-      That is all it takes to perform a navigation from the list feature to the detail feature.
-      When the navigation link is tapped, SwiftUI will search up the view hierarchy to find the
-      `NavigationStack` powering the view, find its `path` binding, and append the new `.detail`
-      state to the path, thus triggering a drill-down animation.
-      
-      This is the easiest way to navigate to one screen to another, but it does have some drawbacks.
-      Because we need to reference all of `AppFeature.State.Path` to construct a navigation link, it can
-      make modularization difficult. Every navigation link will need access to every feature's 
-      state.
-      
-      An alternative is to use a plain `Button` instead of `NavigationLink`, and send an action
-      from that button. Then the parent `App` feature can intercept that action and manually append
-      state to its `path`. This fully decouples the features from one another, and only the `App`
-      feature needs to have knowledge about all of the child features.
-      
-      We will not do that refactor now, but it would be instructive for the reader to try it 
-      themselves.
-      
-      Before moving on let's make sure that the deletion and editing logic that we implemented in
-      the detail screens properly works now that we can navigate to the detail screen from the 
-      sync-ups list screen.
-      
+
+      リスト機能から詳細機能に画面遷移が行われるようになりました。
+      `NavigationLink` をタップすると SwiftUI はビュー階層上部から `NavigationStack` の `path` に `.detail` をセットすることで画面を遷移します。
+
+      `NavigationLink` は画面遷移を行う最も簡単な方法ですが、いくつかの欠点があります。
+      `NavigationLink` を構築するために遷移先の状態のみならず `AppFeature.State.Path` という全体の状態を参照するため、各機能が他の機能の状態を知ることになり、モジュール性が低下します。
+
+      `NavigationLink` ではなく `Button` を用いて送信されたアクションを親機能である `AppFeature` で受信し、手動で `path` をセットする方法もあります。
+      これにより `AppFeature` 機能だけが子機能について知ることができるため、各機能間で状態を共有する必要がなくなり、モジュール性が高まります。
+
+      今回はこのリファクタリングは行わないため、読者自身で試してみてください。
+
+      次に進む前に、詳細画面で実装した削除・編集ロジックが Sync-up リスト画面から詳細画面に画面遷移できるようになった現在でも正常に動作することを確認します。
+
       @Step {
-        Navigate to the detail screen of a sync-up and delete it to confirm that it works as 
-        expected.
-        
+        Sync-up 詳細画面への遷移後に Sync-up を削除して、期待通りに動作することを確認します。
+
         @Video(source: SyncUpDetailNavigation-03-video-0005.mov)
       }
-      
+
       @Step {
-        Navigate to the detail screen of a sync-up, edit it, and then navigate back to the list
-        screen to verify that changes were made. Also relaunch the app to confirm that the data
-        was persisted to disk.
-        
+        Sync-up 詳細画面に遷移後に Sync-up を編集してから Sync-up リスト画面に戻って変更が反映されていることを確認します。
+        また、アプリを再起動してデータがディスクに永続化されていることを確認します。
+
         @Video(source: SyncUpDetailNavigation-03-video-0006.mov)
       }
     }

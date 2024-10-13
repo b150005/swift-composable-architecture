@@ -1,183 +1,159 @@
 @Tutorial(time: 5) {
-  @Intro(title: "What is SyncUps?") {
-    Let's start with a tour of the application we will be building. It's called SyncUps, and it's a
-    recreation of Apple's Scrumdinger demo application. 
-    
-    It features multiple different navigation patterns, has interesting side effects such as a timer
-    and speech recognizer, and it's complex enough that it warrants a test suite to be confident it
-    works the way we expect.
+  @Intro(title: "SyncUps とは何か？") {
+    これから構築するアプリケーションは Apple の Scrumdinger デモを再現した SyncUps アプリケーションです。
+
+    複数の異なる遷移パターンを特徴とし、タイマーや音声認識といった副作用を持つためテストスイートが複雑になっています。
   }
-  
-  @Section(title: "A tour of SyncUps") {
+
+  @Section(title: "SyncUps ツアー") {
     @ContentAndMedia {
-      This very repo contains a [demo project][syncups] that shows how to build a moderately complex
-      application using the Composable Architecture. Let's go on a quick tour of the app so that we
-      can see what exactly we will be building in this tutorial.
-      
+      [デモプロジェクト][syncups] では TCA を用いた複雑なアプリケーションの構築方法を紹介しています。
+
       [syncups]: https://github.com/pointfreeco/swift-composable-architecture/tree/main/Examples/SyncUps
     }
-    
+
     @Steps {
       @Step {
-        Start by cloning the Composable Architecture repo:
-        
+        まずは以下のコマンドを実行し、 TCA リポジトリをクローンします。
+
         `git clone https://www.github.com/pointfreeco/swift-composable-architecture`
       }
+
       @Step {
-        Navigate to the Examples/SyncUps directory and open the SyncUps.xcodeproj file.
+        `Examples/SyncUps` ディレクトリに移動し `SyncUps.xcodeproj` ファイルを開きます。
       }
+
       @Step {
-        Press ⌘R to run the application in the simulator.
-        
-        > Note: You may need to enable macros that the library uses before you can run the app in
-        > the simulator.
-        
+        `⌘ + R` を押してシミュレータでアプリケーションを実行します。
+
+        > Note: シミュレータでアプリを実行する前に TCA ライブラリのマクロを有効にしてください。
+
         @Image(source: TourOfSyncUps-0003-image.png)
       }
+
       @Step {
-        Tap the "+" button in the top-right to bring up a sheet where you can enter the details of a
-        new sync-up.
-        
+        "+" ボタンをタップして Sync-up の詳細入力シートを表示します。
+
         @Image(source: TourOfSyncUps-0004-image.png)
       }
+
       @Step {
-        Tap the "Add" button in the top-right to complete adding the sync-up. Notice that the sheet
-        dismisses and the new sync-up is added to the list.
-        
+        "Add" ボタンをタップして Sync-up を追加するとシートが閉じられ、 Sync-up がリストに追加されます。
+
         @Image(source: TourOfSyncUps-0005-image.png)
       }
+
       @Step {
-        Tap on the row in the list in order to drill down to the details of the sync-up.
-        
+        ListView の行をタップして Sync-up 詳細画面のビュー階層に移動します。
+
         @Image(source: TourOfSyncUps-0006-image.png)
       }
-      
-      From here there are a few actions you can perform. You can edit the sync-up's details, you can
-      record a new meeting in the sync-up, you can view past meetings (currently there aren't any),
-      and you can delete the sync-up.
-      
+
+      Sync-up 詳細画面では詳細情報を編集したり、ミーティングを記録したり、 Sync-up を削除したり、と複数のアクションを実行できます。
+
       @Step {
-        Tap the "Edit" button in the top-right to bring up a sheet with all the info of the sync-up.
-        Edit the sync-up by adding a new attendee, "Blob Esq", and tap "Done" in the top-right to
-        commit that change. Notice that the sheet is dismissed and the change was applied to the
-        form in the detail screen.
-        
+        "Edit" ボタンをタップして Sync-up のすべての情報が含まれたシートを表示します。
+        参加者に "Blob Esq" を追加して "Done" ボタンをタップして編集を完了するとシートが閉じられ、詳細画面のフォームに適用されます。
+
         @Image(source: TourOfSyncUps-0007-image.png)
       }
-      
+
       @Step {
-        Tap the "Start meeting" button to start a meeting. Notice that you drill down to a new
-        screen and are immediately prompted asking for speech recognition permission.
-        
+        "Start meeting" ボタンをタップしてミーティングを開始します。
+        ミーティング画面のビュー階層に遷移し、音声認識の許可を求めるプロンプトが表示されます。
+
         @Image(source: TourOfSyncUps-0008-image.png)
       }
-      
+
       @Step {
-        Either grant access or deny access in order to officially start the meeting. Once done you
-        will see that a timer begins and will automatically control which speaker is currently
-        active.
-        
-        > Note: You can choose to grant or deny, but currently the speech recognition APIs do not
-        > work in simulators and so it doesn't really matter which you choose.
-        
+        音声認識機能へのアクセスを許可または拒否してミーティングを開始するとタイマーが開始され、現在のアクティブスピーカーが自動的に制御されます。
+
+        > Note: 許可または拒否を選択できますが、現時点では音声認識 API をシミュレータ上で動作できないため、どちらを選択しても同じ挙動になります。
+
         @Image(source: TourOfSyncUps-0009-image.png)
       }
-      
-      The meeting will automatically end once the time runs out, but there is a faster way to end
-      the meeting too.
-      
+
+      時間経過によってミーティングは自動的に終了しますが、ミーティングを早期終了する方法もあります。
+
       @Step {
-        Tap the "End meeting" to bring up an alert showing your options for ending the meeting 
-        early.
-        
+        "End meeting" ボタンをタップすると、早期終了を確認するアラートが表示されます。
+
         @Image(source: TourOfSyncUps-0010-image.png)
       }
-      
-      You can either choose to end the meeting early by saving the meeting in the history or 
-      discarding the meeting, or you can cancel and go back to the meeting.
-      
+
+      ミーティングを終了して履歴に保存するか、ミーティングを破棄するか、または早期終了をキャンセルしてミーティングに戻るか選択できます。
+
       @Step {
-        Tap "Save and end" in order to end the meeting early. Notice that you are popped back to
-        the detail screen, and that the "Past meetings" section has a new row for the meeting
-        that was just recorded.
-        
+        ここでは "Save and end" ボタンをタップしてミーティングを早期終了します。
+        詳細画面に戻ると "Past meetings" セクションに保存したミーティングの行が追加されています。
+
         @Image(source: TourOfSyncUps-0011-image.png)
       }
-      
+
       @Step {
-        Tap the newly added meeting in order to drill down to the meeting details.
-        
-        > Note: Currently there is no transcript recorded for this meeting because the speech
-        > recognition APIs do not work in the simulator.
-        
+        保存したミーティングをタップして、ミーティング詳細画面のビュー階層に遷移します。
+
+        > Note: 現在、音声認識 API がシミュレータ上で動作しないためミーティング記録はありません。
+
         @Image(source: TourOfSyncUps-0012-image.png)
       }
-      
+
       @Step {
-        Go back to the detail of the sync-up and tap the "Delete" button to see an alert asking you
-        to confirm that you want to delete the sync-up.
-        
+        Sync-up 詳細画面に戻り "Delete" ボタンをタップすると削除確認のアラートが表示されます。
+
         @Image(source: TourOfSyncUps-0013-image.png)
       }
-      
+
       @Step {
-        Tap "Yes" to confirm deleting the sync-up. You will be popped back to the root list of
-        sync-ups, which will be empty now that the sync-up was deleted.
-        
+        "Yes" ボタンをタップして Sync-up を削除します。
+        Root ビューである Sync-up リスト画面に戻され、 Sync-up が削除されたためリストが空になりました。
+
         @Image(source: TourOfSyncUps-0014-image.png)
       }
-      
-      That completes the tour! Another feature of the app that was working behind the scenes without
-      you noticing was automatic persistence of the data. Every change made to the sync-up, from
-      adding a new attendee to recording a new meeting, was automatically persisted to a JSON file
-      on disk. This means that when you quit the app and re-open it will have all of your data
-      immediately loaded from disk.
+
+      この機能ではバックグラウンドでデータの自動永続化が行われていました。
+      参加者の追加からミーティングの記録まで、 Sync-up のあらゆる変更が自動的にディスク上のJSONファイルに永続化されるので、アプリを終了して再開するとすべてのデータがディスクから即座に読み込まれます。
     }
   }
-  
-  @Section(title: "Create the SyncUps project") {
+
+  @Section(title: "SyncUps プロジェクトの作成") {
     @ContentAndMedia {
-      Let's create a brand new project so that we can rebuild the SyncUps app from scratch. This
-      will give us the opportunity to explore how to solve various problems with the Composable
-      Architecture, such as domain modeling, navigation, state sharing, persistence, effects, 
-      testing, and more!
+      SyncUps アプリを一から再構築できるように、新規プロジェクトを作成します。
+      ドメインモデリングや画面遷移、状態共有、永続化、 Effect 、テストなど、 TCA を用いてさまざまな問題を解決する方法を紹介します。
     }
-    
+
     @Steps {
       @Step {
-        Start by creating a brand new Xcode project. For the purpose of this tutorial we will target
-        the newest version of iOS (17.4 at the time of writing this), but do know that it is 
-        possible to build apps with the Composable Architecture that target older versions of
-        iOS (see <doc:ObservationBackport> for more information on this).
-        
+        まずは新規の Xcode プロジェクトを作成します。
+        ターゲットにはiOS (執筆時点での最新は 17.4) を指定しますが、旧バージョンの iOS も指定可能です。
+        詳細は <doc:ObservationBackport> を参照してください。
+
         @Image(source: CreateProject-0001-image.png)
       }
-      
+
       @Step {
-        Import the Composable Architecture. Currently your project does not depend on the Composable
-        Architecture and so it will not compile yet.
-        
+        TCA ライブラリをインポートします。
+        デフォルトではプロジェクトは TCA に依存していないため、まだコンパイルできません。
+
         @Image(source: CreateProject-0002-image.png)
       }
-      
+
       @Step {
-        Click on the "Search..." button to search the Swift Package Index for our library. Add
-        the library to your project. Be sure to target the newest version of the library (at least
-        1.10.0).
-        
+        "Search..." ボタンをクリックして、 Swift Package Index でライブラリを検索してプロジェクトに追加します。
+        TCA ライブラリの最新バージョン(1.10.0 以降)をコンパイラターゲットに指定してください。
+
         @Image(source: CreateProject-0003-image.png)
       }
-      
+
       @Step {
-        Navigate to the project settings and turn "Strict Concurrency Checking" to "Complete". This
-        will force us to handle any potentially problematic concurrency code as we progress through
-        the tutorial.
-        
+        プロジェクト設定に移動し、 "Strict Concurrency Checking" を "Complete" に設定します。
+        これにより、潜在的に問題のある Concurrency なコードへの対処がコンパイラによって強制されます。
+
         @Image(source: CreateProject-0004-image.png)
       }
-      
-      That is all it takes to set up the project for our SyncUps recreation. We can now start
-      building our first feature in <doc:ListsOfSyncUps>.
+
+      SyncUps を再現するためのプロジェクトのセットアップは完了しました。
+      <doc:ListsOfSyncUps> で最初の機能を構築していきます。
     }
   }
 }

@@ -1,233 +1,187 @@
 @Tutorial(time: 30) {
-  @Intro(title: "Adding side effects") {
-    Learn how to communicate with the outside world in your features, and feed data from the outside
-    back into your feature.
+  @Intro(title: "副作用の追加") {
+    機能と外部システムの接続方法と、外部から受信したデータを機能で受け取る方法を学びます。
   }
-  
-  @Section(title: "What is a side effect?") {
+
+  @Section(title: "副作用とは何か？") {
     @ContentAndMedia {
-      Side effects are by far the most important aspect of feature development. They are what allow
-      us to communicate with the outside world, such as making API requests, interacting with file 
-      systems, and performing time-based asynchrony. Without them, our applications could not do
-      anything of real value for our users.
-      
-      However, side effects are also the most complex part of our features. State mutations are 
-      simple processes. If you run the reducer with the same piece of state and same action, you will
-      always get the same result. But effects are susceptible to the vagaries of the outside world, 
-      such as network connectivity, disk permissions, and more. Each time you run an effect, you
-      can get back a completely different answer.
-      
-      Let's start by seeing why we can't simply perform effectful work directly in our 
-      ``ComposableArchitecture/Reducer`` conformances, and then we will see what tools the
-      library provides for performing effects.
+      副作用は、機能開発において最も重要な部分であり、 API リクエストの実行、ファイルシステムとの通信、時間ベースの非同期処理など、外部システムとの接続を可能にします。
+      副作用がなければ、アプリケーションはユーザーにとって価値がないといっても過言ではありません。
+
+      しかし、副作用は機能の中で最も複雑な部分でもあります。
+      State の変更は単純なプロセスであり、 State と Action が同じ Reducer を実行すれば、常に同じ結果が得られます。
+      しかし、 Effect は外部システムの変化(ネットワークの通信状況やディスク権限など)に影響されやすく、 Effect を実行するたびに全く異なる結果が得られる可能性があります。
+
+      まず、 ``ComposableArchitecture/Reducer`` プロトコルに準拠する際に直接 Effect を実行できない理由を紹介します。
+      そして、ライブラリが Effect を実行するために提供しているツールも併せて紹介します。
     }
-    
+
     @Steps {
       @Step {
-        Let's add a new bit of functionality to the counter feature we built in 
-        <doc:01-01-YourFirstFeature>. We will add a button that when tapped makes a network request to
-        fetch a fact about the number that is currently displayed.
-        
-        There are two ways you can approach this. Sometimes people like to work on the reducer
-        first, and then the view. Others like to start with the view, which is what we will do now.
-        We have added an additional button to the bottom of `CounterView`, and when it is tapped we
-        will send a `factButtonTapped` action, which does not yet exist in the counter domain, but
-        will soon.
-        
+        前回 <doc:01-01-YourFirstFeature> で構築したカウンター機能に新機能を追加しましょう。
+        現在表示されているカウントの数字に関する事実(`fact`)をフェッチするネットワークリクエストを行うボタンを追加します。
+
+        Reducer とビューのどちらを先に変更するかは自由ですが、今回はビューを先に変更します。
+        `CounterView` の下部に、タップ時に `factButtonTapped` アクションを送信するボタンを新たに追加します。
+        このアクションはまだ Action に定義していませんが、後で追加します。
+
         @Code(name: "CounterFeature.swift", file: 01-02-01-code-0001.swift, previousFile: 01-02-01-code-0001-previous.swift) {
           @Image(source: "02-01-image-0001")
         }
       }
-      
+
       @Step {
-        We will also add a progress view at the bottom to display while we are loading the fact,
-        and we will unwrap a bit of optional state to display the fact. We are using the
-        `isLoading` and `fact` state to accomplish this, neither of which exists in the counter 
-        feature yet, but will soon.
-        
+        また、 `fact` の読み込み中に表示する `ProgressView` を下部に追加し、 `fact` を表示するために State のオプショナルプロパティをアンラップします。
+        `isLoading` と `fact` の状態を使用していますが、まだ State には定義していないため、後で追加します。
+
         @Code(name: "CounterFeature.swift", file: 01-02-01-code-0002.swift)
       }
-      
-      That is all it takes for the view. The code is not yet compiling because we are using state
-      and actions that don't yet exist, so let's fix those errors in the reducer.
-      
+
+      これでビュー部分の変更は完了しましたが、存在しない State と Action を使用しているため、コードはまだコンパイルできません。
+      Reducer も修正し、これらのエラーを解決しましょう。
+
       @Step {
-        Recall that this is what our `CounterFeature` reducer looks like so far, as built in
-        <doc:01-01-YourFirstFeature>. It has a simple `State` and `Action` type, and the reducer
-        simply decrements or increments the `count` state depending on which action is sent.
-        
+        前回 <doc:01-01-YourFirstFeature> で構築した`CounterFeature` を思い出してください。
+        シンプルな `State` と `Action` があり、 Reducer は送信されたアクションに応じて `count` の状態を増減させるだけでした。
+
         @Code(name: "CounterFeature.swift", file: 01-02-01-code-0003.swift, reset: true)
       }
-      
+
       @Step {
-        Let's add the additional state and actions that have been dictated to us by the view.
-        We know we need some `fact` and `isLoading` state, and we need a `factButtonTapped` action.
-        We can also implement that action in the reducer by flipping `isLoading` to `true`, and 
-        we'll clear the `fact` state when any button is tapped. And finally, we will return `.none` 
-        just like we did in all the other cases.
+        ビューで新たに使用した State(`fact`, `isLoading`) と Action(`factButtonTapped`) を追加しましょう。
+        Reducer でこの Action を実装し、 `isLoading` を `true` に切り替え、ボタンのタップ時に `fact` の状態を `nil` で初期化します。
+        そして、他のケースと同様に`.none`を返すようにします。
 
         @Code(name: "CounterFeature.swift", file: 01-02-01-code-0004.swift)
       }
-      
+
       @Step {
-        Now the question is: how can we perform a side-effect? We will be using 
-        [numbersapi.com][numbersapi.com] to fetch a fact for the state's current count. We might
-        hope we can just use `URLSession` directly in the reducer to perform some async work, but
-        unfortunately that is not allowed. 
-        
+        次の問題は、どのように副作用を実行するか、ですが、 [numbersapi.com][numbersapi.com] を使用して `fact` に値を代入してみます。
+        このコードのように Reducer 内で直接 `URLSession` を使用して非同期実行したいところですが、残念ながら許されていません。
+
         [numbersapi.com]: http://www.numbersapi.com
-        
+
         @Code(name: "CounterFeature.swift", file: 01-02-01-code-0005.swift)
       }
-      
-      The Composable Architecture separates the simple, pure transformations of state from the 
-      complex, messy side effects. It is one of the core tenets of the library and there are a lot 
-      of benefits to doing so. Luckily for us, the library gives us a tool that is appropriate
-      for executing side effects. It is called ``ComposableArchitecture/Effect`` and it is
-      explored in the next section.
+
+      TCA では、 State の単純で純粋な変換を、複雑で厄介な副作用から分離しています。
+      これはライブラリの核心的な原則の1つであり、多くの利点があります。
+      幸いなことに、 ``ComposableArchitecture/Effect`` と呼ばれる副作用を実行するためのツールを提供しており、次のセクションで紹介します。
     }
   }
-  
-  @Section(title: "Performing a network request") {
+
+  @Section(title: "ネットワークリクエストの実行") {
     @ContentAndMedia {
-      Now that we understand what a side-effect is and why they cannot be performed directly in
-      a reducer, let's see how to fix the code we wrote above. 
-      
-      The Composable Architecture bakes the notion of "effect" directly into the definition of 
-      ``ComposableArchitecture/Reducer``. After a reducer processes an action by mutating
-      state, it can return something called an ``ComposableArchitecture/Effect``, which 
-      represents an asynchronous unit that is run by the ``ComposableArchitecture/Store``. Effects
-      are what can communicate with outside systems and then feed data from the outside back into 
-      the reducer.
-      
-      This is exactly what we want to do for our number fact effect. We want to make a network 
-      request, and then feed that information back into the reducer. So, let's get started.
+      副作用と Reducer 内で直接副作用を実行できない理由を理解したので、上記で書いたコードを修正する方法を紹介します。
+
+      TCA は"Effect"の概念を ``ComposableArchitecture/Reducer`` の定義に直接組み込んでいます。
+      Reducer が Action を処理して State を変更し、 ``ComposableArchitecture/Effect`` と呼ばれる、 ``ComposableArchitecture/Store`` によって実行される非同期ユニットを返します。
+      Effect は外部システムと通信し、外部からのデータを Reducer に送信することができます。
+
+      これは、 `fact` の初期化で行いたい挙動そのものです。ネットワークリクエストに対するレスポンスデータを Reducer で受信したいのです。
+      それでは、学習を始めましょう。
     }
-    
+
     @Steps {
       @Step {
-        The primary way one constructs an ``ComposableArchitecture/Effect`` is via the static method 
-        ``ComposableArchitecture/Effect/run(priority:operation:catch:fileID:filePath:line:column:)``. This provides
-        you with an asynchronous context to perform any kind of work you want, as well as a handle
-        (`send`) for sending actions back into the system.
-        
+        ``ComposableArchitecture/Effect`` を構築する主な方法は、静的メソッド ``ComposableArchitecture/Effect/run(priority:operation:catch:fileID:filePath:line:column:)`` を介して行います。
+        これにより、副作用を実行するための非同期コンテキストと Action をシステムに送信する処理(`send`)が提供されます。
+
         @Code(name: "CounterFeature.swift", file: 01-02-02-code-0001.swift, previousFile: 01-02-01-code-0005.swift)
       }
-      
+
       @Step {
-        The trailing closure of `.run` is the perfect place to perform our network request to fetch
-        data from [numbersapi.com][numbersapi.com] and turn it into a string.
-        
-        > Tip: Unfortunately [numbersapi.com][numbersapi.com] does not offer HTTPS, so you will need 
-        > to add an entry to your application's Info.plist in order to allow HTTP requests. See 
-        > [this][always-allow] article for information on how to do that.
-        
+        `.run`の trailing closure は、 [numbersapi.com][numbersapi.com] からデータをフェッチするネットワークリクエストの実行と、受け取ったデータを文字列に変換するのに最適な場所です。
+
+        > Tip: 残念ながら [numbersapi.com][numbersapi.com] は HTTPS を提供していないため、 HTTP リクエストを許可するためにアプリケーションの Info.plist にエントリを追加する必要があります。
+        > その方法については [この記事][always-allow] を参照してください。
+
         [numbersapi.com]: http://www.numbersapi.com
         [always-allow]: https://developer.apple.com/documentation/bundleresources/information_property_list/nsapptransportsecurity
-                
+
         @Code(name: "CounterFeature.swift", file: 01-02-02-code-0002.swift)
       }
-      
+
       @Step {
-        However, it is not possible to then mutate the `state.fact` in the effect after fetching
-        the data from the network. This is strictly enforced by the compiler since sendable closures
-        cannot capture `inout` state. This is showing how the library chooses to separate the nice, 
-        simple and pure state mutations that reducers perform from the messy, complex effects. 
-        
+        しかし、ネットワークからデータをフェッチした後に Effect 内で `state.fact` を変更することはできません。
+        `Sendable` なクロージャは `inout` 状態をキャプチャできず、コンパイラによって厳密に強制されるためです。
+        これは、ライブラリが Reducer が実行する、素晴らしく単純で純粋な状態の変更を、複雑で厄介な Effect から分離していることを表しています。
+
         @Code(name: "CounterFeature.swift", file: 01-02-02-code-0003.swift)
       }
-      
+
       @Step {
-        In order for us to feed the information from the effect back into our reducer we need to
-        introduce another action, called `factResponse`, and it will have an associated value of the
-        string that is fetched from the network. Then we can send that action in the effect after
-        performing the asynchronous work, and we can handle the new action by flipping `isLoading`
-        back to `false` and updating the `fact` state.
-        
-        > Warning: Currently we are ignoring any errors that can be thrown by `URLSession`. In a 
-        > more complete application you would want to leverage ``ComposableArchitecture/TaskResult``
-        > to have errors fed back into the reducer so that you can react appropriately.
-        
+        Effect から Reducer にデータを渡すために、 `factResponse` というネットワークからフェッチされた `String` 型の連想値を受け取る、別の Action を導入する必要があります。
+        そして、非同期処理後に Effect 内でその Action を送信し、新しい Action で `isLoading` を `false` に戻し、 `fact` の状態を更新するようにします。
+
+        > Warning: 現在、`URLSession`によってスローされる可能性のあるエラーを無視しています。
+        > より完全なアプリケーションでは ``ComposableArchitecture/TaskResult`` を活用して、エラーを Reducer に渡し、適切に対処する必要があります。
+
         @Code(name: "CounterFeature.swift", file: 01-02-02-code-0004.swift)
       }
-      
+
       @Step {
-        We can now run the application in the simulator or in a preview and see that the feature
-        works as we expect. We can count up to a number, tap the "Fact" button, and a moment
-        later a fact will be displayed at the bottom of the UI.
-        
+        これで、シミュレータやプレビューでアプリケーションを実行し、機能が期待通りに動作することを確認できます。
+        値をカウントし、 "Fact" ボタンをタップすると、 UI 下部に、カウンターの数字に関する事実が表示されます。
+
         @Code(name: "CounterFeature.swift", file: 01-02-02-code-0005.swift) {
           @Video(source: "02-02-video-0005")
         }
       }
     }
   }
-    
-  @Section(title: "Managing a timer") {
+
+  @Section(title: "タイマーの管理") {
     @ContentAndMedia {
-      Network requests are probably one of the most common types of side effects, but they are not
-      the only kind. Let's add a new bit of functionality to our counter feature. We will add 
-      another button that when tapped starts a one second repeating timer, and for each tick we will 
-      increment the state's `count` by one.
+      ネットワークリクエストは最も一般的な副作用ですが、他にも副作用の種類があります。
+      カウンター機能に、タップすると1秒ごと `count` を1ずつ増加させる別のボタンを追加してみます。
     }
-    
+
     @Steps {
       @Step {
-        We will start with the view layer, just as we did before. We will add a button that either
-        displays "Start timer" or "Stop timer", depending on some `isTimerRunning` state, and
-        when tapped we will send a `toggleTimerButtonTapped` action. That's all it takes for the
-        view.
-        
-        > Note: The `isTimerRunning` state and `toggleTimerButtonTapped` actions do not yet exist. 
-        > We will add them in the next step.
-        
+        前回と同様、 Reducer の変更ではなくビューの変更から始めましょう。
+        `isTimerRunning` の状態に応じて "Start timer" または "Stop timer" を表示するボタンを追加し、タップ時に `toggleTimerButtonTapped` アクションを送信します。
+
+        > Note: State への `isTimerRunning` の追加、 Action への `toggleTimerButtonTapped` の追加は次のステップで行います。
+
         @Code(name: "CounterFeature.swift", file: 01-02-03-code-0001.swift, previousFile: 01-02-01-code-0002.swift)
       }
-      
+
       @Step {
-        Next we will update the reducer by adding the `isTimerRunning` state, a new 
-        `toggleTimerButtonTapped` action, and stubbing in the basics of the logic for the new 
-        action. We know we will want to execute some asynchronous work, in particular a timer, so
-        we have gone ahead and opened up a `run` effect.
-        
+        次に、 State には `isTimerRunning` 、 Action には `toggleTimerButtonTapped` 、 Reducer にはそのアクションを処理する基本的なロジックを追加します。
+        タイマーを開始する非同期処理を行うので、 Reducer は `run` Effect を返すようにしています。
+
         @Code(name: "CounterFeature.swift", file: 01-02-03-code-0002.swift, previousFile: 01-02-02-code-0005.swift)
       }
-      
+
       @Step {
-        Inside the `run` effect we can emulate a very crude timer by starting an infinite `while`
-        loop and sleeping for one second inside the loop. This is not the best way to construct a
-        timer as it allows for drift to occur, but it will be fine for our purposes right now.
-        
+        `run` Effect 内で `while` ループを宣言し、ループ内で1秒間スリープすることで、非常に粗いタイマーをエミュレートできます。
+        これはドリフト(タイマーの長時間実行による発火タイミングのずれ)が生じる可能性があるため、ベストな方法ではないことに注意してください。
+
         @Code(name: "CounterFeature.swift", file: 01-02-03-code-0003.swift)
       }
-      
+
       @Step {
-        In order to react to each timer tick in the reducer we need to introduce a new action,
-        `timerTick`, that will be sent after each `Task.sleep`. And it's in that action we will
-        increment the state's `count`.
-        
-        
+        Reducer で各タイマーの発火イベントを処理するために、 `Task.sleep` の後で `timerTick` アクションを送信するようにします。
+        そして、その Action で `count` をインクリメントします。
+
         @Code(name: "CounterFeature.swift", file: 01-02-03-code-0004.swift)
       }
-      
-      However, there is a bug. If we tap the "Start timer" button to start the timer, and then tap
-      "Stop timer", we will see that the timer did not stop.
-      
+
+      しかし、このままではバグが残っています。
+      "Start timer" ボタンをタップした後、 "Stop timer" ボタンをタップしても、タイマーは停止しません。
+
       @Step {
-        To fix the bug, we can leverage a powerful feature of the Composable Architecture known as 
-        "effect cancellation". We can mark any effect as cancellable using the 
-        ``ComposableArchitecture/Effect/cancellable(id:cancelInFlight:)`` method by providing
-        an ID, and then at a later time we can cancel that effect using 
-        ``ComposableArchitecture/Effect/cancel(id:)``.
-        
+        このバグを修正するために、 TCA の強力な機能である"Effect のキャンセル"を活用できます。
+        ``ComposableArchitecture/Effect/cancellable(id:cancelInFlight:)`` を使用して Effect をキャンセル可能な Effect としてマークし、後で ``ComposableArchitecture/Effect/cancel(id:)`` を使用してその Effect をキャンセルできます。
+
         @Code(name: "CounterFeature.swift", file: 01-02-03-code-0005.swift)
       }
-      
+
       @Step {
-        Now the feature works as we expect. We can start the timer, wait a few seconds to see it
-        count up, and then we can stop the timer. This shows how to manage a long-living effect,
-        including how to cancel effects.
-        
+        これで機能は期待通りに動作します。タイマーを開始し、数秒待ってカウントアップするのを確認し、その後タイマーを停止できます。
+        長時間実行される Effect を管理する方法と、 Effect をキャンセルする方法を紹介しました。
+
         @Code(name: "CounterFeature.swift", file: 01-02-03-code-0006.swift) {
           @Video(source: "03-03-video-0006")
         }

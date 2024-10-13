@@ -1,110 +1,84 @@
 @Tutorial(time: 5) {
-  @Intro(title: "The RecordMeeting feature") {
-    Let's get the basics of a new feature into place that we can navigate to, and then we will 
-    slowly layer on its complex logic and behavior, such as the timer and speech recognizer.
-    
-<!--    @Image(source: <#file#>, alt: "<#accessible description#>")-->
+  @Intro(title: "RecordMeeting 機能") {
+    新機能の土台を作成し、画面遷移できるようにしてからタイマーや音声認識などの複雑なロジックと振る舞いを追加していきます。
   }
-  
-  @Section(title: "Create a new feature") {
+
+  @Section(title: "新機能の作成") {
     @ContentAndMedia {
-      We will create a brand new feature to hold the logic, behavior and view of the record 
-      meeting feature. We won't actually implement any of the logic yet, but we will get the 
-      basics of the domain modeling and view into place.
-      
-<!--      @Image(source: <#file#>, alt: "<#accessible description#>")-->
+      ミーティング録音機能のロジック・振る舞い・ビューをもつ新機能を作成します。
+      一旦ロジックは飛ばして、ドメインモデリングとビューの土台を作成します。
     }
-    
+
     @Steps {
       @Step {
-        Create a new file, RecordMeeting.swift, and add a new type with the 
-        [`@Reducer`](<doc:ComposableArchitecture/Reducer()>) macro applied that will house the
-        logic and behavior of this feature.
-        
+        `RecordMeeting.swift` というファイルを作成し、機能のロジックと振る舞いを [`@Reducer`](<doc:ComposableArchitecture/Reducer()>) マクロを適用した構造体に追加します。
+
         @Code(name: "RecordMeeting.swift", file: RecordMeetingFeature-01-code-0001.swift)
       }
-      
+
       @Step {
-        Add properties to the `State` struct inside `RecordMeeting` that the feature needs to do
-        its job, including the current attendee that is speaking, the number of seconds elapsed,
-        the transcript of the meeting, and the current sync-up we are meeting about.
-        
-        Also add cases to the `Action` enum for what things the user can do in the view, which 
-        currently is just tapping the "End meeting" button to end a meeting early, and the "Next"
-        button for skipping a speaker's turn.
-        
-        > Note: We are using [`@Shared`](<doc:ComposableArchitecture/Shared>) on the sync-up so
-        that this feature can make mutations to sync-up that are visible to other parts of the 
-        application.
-        
+        `RecordMeeting` 内の `State` 構造体に現在の話者・経過時間・議事録・ Sync-up を表すプロパティを追加します。
+
+        また、 `Action` 列挙型にユーザがビュー上で行う操作ケースを追加します。
+        現段階では、会議を早期終了する "End meeting" ボタンと話者をスキップする "Next" ボタンの2つがあります。
+
+        > Note: Sync-up に [`@Shared`](<doc:ComposableArchitecture/Shared>) プロパティラッパーを適用することで、他の機能と Sync-up を共有しながら操作することができます。
+
         @Code(name: "RecordMeeting.swift", file: RecordMeetingFeature-01-code-0002.swift)
       }
-      
+
       @Step {
-        Copy-and-paste the `RecordMeetingView` into the file, as well as its supplementary views.
-        
-        > Note: We are not writing this view code from scratch because we are not focused on 
-        learning how to build SwiftUI views. Apple's documentation handles that well! Instead we
-        are interested in how to implement the logic and behavior of our views, and so building
-        the view is just a distraction.
-        
+        `RecordMeetingView` とそのサブビューをペーストします。
+
+        > Note: このチュートリアルでは SwiftUI ビューの構築ではなくプレゼンテーションロジックと振る舞いの実装方法について焦点を当てます。
+
         @Code(name: "RecordMeeting.swift", file: RecordMeetingFeature-01-code-0003.swift)
       }
-      
+
       @Step {
-        Run the preview to see what the design of the feature looks like.
-        
+        プレビューを実行してデザインを確認します。
+
         @Image(source: "RecordMeetingFeature-01-image-0004.jpg")
       }
     }
   }
-  
-  @Section(title: "Navigating to the record meeting feature") {
+
+  @Section(title: "ミーティング録音画面への遷移") {
     @ContentAndMedia {
-      We now have the basics of the record meeting feature in place, so let's make it so that we 
-      can navigate to the feature from the detail feature.
+      ミーティング録音機能の土台が完成したため、詳細画面からこのミーティング録音画面に遷移できるようにしましょう。
     }
-    
+
     @Steps {
       @Step {
-        Go to the AppFeature.swift file so that we can create a new case in the `Path` reducer.
-        This allows us to express that we want to be able to navigate to the `RecordMeeting`
-        feature in the navigation stack.
-        
+        `AppFeature.swift` ファイルに移動し、 `Path` Reducer にケースを追加することで `NavigationStack` で `RecordMeeting` 機能に画面遷移できるようにします。
+
         @Code(name: "AppFeature.swift", file: RecordMeetingFeature-02-code-0001.swift, previousFile: RecordMeetingFeature-02-code-0001-previous.swift)
       }
-      
-      Adding a case to this enum causes a compiler error in the view where we are switching on the
-      enum.
-      
+
+      `Path` 列挙型にケースを追加すると、 switch 文で `Path` 列挙型を使用しているビューでコンパイラエラーが発生します。
+
       @Step {
-        Fix the compiler error by destructuring the `.record` case to get access to a 
-        ``ComposableArchitecture/Store`` focused on the `RecordMeeting` domain, and then 
-        construct the `RecordMeetingView`.
-        
+        `.record` ケースを分解して `RecordMeeting` ドメインにスコープを限定した ``ComposableArchitecture/Store`` にアクセスし、 `RecordMeetingView` を構築することでコンパイラエラーを修正します。
+
         @Code(name: "AppFeature.swift", file: RecordMeetingFeature-02-code-0002.swift, previousFile: RecordMeetingFeature-02-code-0002-previous.swift)
       }
-      
-      That gets the app building again, but we still haven't implemented logic to actually
-      navigate to the record meeting feature.
-      
+
+      アプリは再びビルド可能になりましたが、ミーティング録音機能への画面遷移ロジックはまだ実装していません。
+
       @Step {
-        Update the `NavigationLink` in the `SyncUpDetailView` so that when it is tapped it pushes
-        `Path` state to the stack.
-        
+        `SyncUpDetailView` の `NavigationLink` を修正し、 "Start Meeting" ラベルのタップ時に `NavigationStack` に `Path` で指定する画面をプッシュするようにします。
+
         @Code(name: "SyncUpDetail.swift", file: RecordMeetingFeature-02-code-0003.swift, previousFile: RecordMeetingFeature-02-code-0003-previous.swift)
       }
 
       @Step {
-        Run the app in the simulator to see that you can tap the "Start meeting" button to drill
-        down to the record meeting feature.
-        
+        シミュレータでアプリを実行し "Start Meeting" ボタンをタップするとミーティング録音画面に遷移します。
+
         @Video(source: RecordMeetingFeature-02-video-0004.mov)
       }
-      
-      We now have the basic scaffolding of a record meeting feature in place, and we can even 
-      navigate to it. It's now time to start implementing some of the complex logic and behavior
-      of the feature, starting with timers.
+
+      ミーティング録音機能の土台の作成と画面遷移を実装しました。
+      次は、タイマーをはじめとするこの機能の複雑なロジックと振る舞いを実装していきます。
     }
   }
 }

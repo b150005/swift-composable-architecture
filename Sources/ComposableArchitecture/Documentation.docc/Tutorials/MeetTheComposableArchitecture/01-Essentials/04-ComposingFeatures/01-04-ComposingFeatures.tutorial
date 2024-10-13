@@ -1,244 +1,183 @@
 @Tutorial(time: 30) {
-  @Intro(title: "Composing features") {
-    Learn what makes the Composable Architecture… well… "composable". We will create a parent 
-    feature that contains the `CounterFeature` we have been building thus far.
+  @Intro(title: "機能の組み合わせ") {
+      TCA の "composable"(組み合わせ可能)な側面について学ぶために、これまで構築してきた `CounterFeature` を含む親機能を作成します。
   }
-  
-  @Section(title: "Adding a tab view") {
+
+  @Section(title: "タブビューの追加") {
     @ContentAndMedia {
-      We will explore composing features together by adding a `TabView` feature with two tabs,
-      each housing a `CounterFeature`. This will give us the opportunity to explore the `Scope`
-      reducer and the `scope` operator on stores.
+      `CounterFeature` 機能に 2つのタブを持つ `TabView` 機能を統合する方法を紹介します。
+      Store の `Scope` Reducer と `scope` 演算子について学んでいきます。
     }
-    
-    
+
     @Steps {
-      Let's approach this in a naive way first by trying to create a root level view that uses
-      a `TabView`. To keep things simple we will just have two tabs, and each will contain their
-      own isolated `CounterView`, which was built previously in the tutorial.
-      
+      まずは `TabView` を使用する Root ビューを作成します。
+      ここでは、2つのタブだけを持ち、各タブにはこれまでのチュートリアルで構築した、独立した `CounterView` を含めます。
+
       @Step {
-        Create a new file called AppFeature.swift with some basic scaffolding in place already
-        for a tab-based view.
-        
+        `AppFeature.swift` というファイルを作成し、 TabView の基本的な土台を構築します。
+
         @Code(name: "AppFeature.swift", file: 01-04-01-code-0001.swift)
       }
-      
+
       @Step {
-        In the tab view we want to create two `CounterView`s, one for each tab, but in order to do
-        so we need to supply two stores.
-        
+        TabView では各タブに `CounterView` を表示するため、2つの Store が必要です。
+
         @Code(name: "AppFeature.swift", file: 01-04-01-code-0002.swift)
       }
-      
-      Where do we get these stores from? Previously when building the `CounterView` the store was
-      defined as a simple `let` property and then whoever constructed the `CounterView` (e.g. 
-      the SwiftUI preview and app entry point) was responsibile for constructing the store and 
-      passing it along.
-      
-      We could try that same strategy here.
-      
+
+      これまでの `CounterView` では Store を単純な `let` プロパティとして宣言しており、 `CounterView` の構築時に `store` パラメータに Store を渡していました。
+      ここでも、同じように Store を構築して `CounterView` に渡せないか試してみましょう。
+
       @Step {
-        Add two new variables to `AppView` that hold stores to be provided to each `CounterView`.
-        
+        `AppView` でそれぞれの `CounterView` に提供する Store を追加してみます。
+
         @Code(name: "AppFeature.swift", file: 01-04-01-code-0003.swift)
       }
-      
-      However, this is not ideal. We now have two completely isolated stores that are not capable
-      of communicating with each other. In the future there may be events that happen in one
-      tab that can affect the other tab.
-      
-      This is why in the Composable Architecture we prefer to compose features together and have
-      our views powered by a single ``ComposableArchitecture/Store``, rather than have multiple
-      isolated stores. This makes it extremely easy for features to communicate with each other,
-      and we can even write tests that the communication is working properly.
-      
-      So, let's put the view aside for a moment and focus first on composing our features' reducers
-      together into a single package, and then we will come back to the view and see how to 
-      properly create this tab view.
+
+      互いに完全に独立した Store を宣言しましたが、将来的に一方のタブで発生したイベントを他方のタブに伝播させる可能性があります。
+      そのため、 TCA では複数の独立した Store を持つのではなく、機能を組み合わせた単一の ``ComposableArchitecture/Store`` でビューを構築します。
+
+      まずは機能(Reducer)を単一のパッケージで組み合わせ、その後でビューを構築します。
     }
   }
-    
-  @Section(title: "Composing reducers") {
+
+  @Section(title: "Reducer の組み合わせ") {
     @ContentAndMedia {
-      We've now seen that by approaching the problem of composing features naively we run into a 
-      weird situation of having multiple isolated stores. We can fix this problem by first composing
-      the features together at the reducer level, and then showing how we can have a single store
-      power our tab-based application.
+      まず Reducer で機能を組み合わせ、次に単一の Store と TabView を持つアプリケーションを構築します。
     }
-    
+
     @Steps {
-      We are going to create a new app-level reducer to power the logic and behavior of the
-      `AppView` we created above. We will also be putting the reducer in the same file as the view,
-      just as we did for `CounterFeature` and `CounterView`. We personally prefer to do this until
-      our features get too big, and then we will split the reducer and view into their own files.
-      
+      `AppView` に沿ったロジックと振る舞いを持つ機能を作成します。
+      カウンター機能(`CounterFeature` と `CounterView`)と同様、 Reducer とビューを同じファイルに配置します。
+      TCA では、機能が膨れ上がるまで Reducer とビューを同じファイルに配置することを推奨しています。
+
       @Step {
-        Create a new `AppFeature` struct and apply the ``ComposableArchitecture/Reducer()`` macro.
-        
+        ``ComposableArchitecture/Reducer()`` マクロを適用した `AppFeature` 構造体を作成します。
+
         @Code(name: "AppFeature.swift", file: 01-04-02-code-0001.swift)
       }
-      
+
       @Step {
-        Add a `State` struct and `Action` enum to the reducer. These data types will hold the state
-        and actions for each tab, each of which are just the `CounterFeature`.
-        
+        Reducer に各タブの State と Action を保持する `State` 構造体と `Action` 列挙型を追加します。
+
         @Code(name: "AppFeature.swift", file: 01-04-02-code-0002.swift)
-        
-        > Note: We are proactively conforming `State` to `Equatable` in order to be able to write
-        tests on this feature later.
+
+        > Note: 後でこの機能のテストを書けるように、 `State` を予め `Equatable` に準拠させます。
       }
-      
+
       @Step {
-        Next we need to implement the ``ComposableArchitecture/Reducer/body-20w8t`` of the reducer.
-        Previously we did this by using the ``ComposableArchitecture/Reduce`` type to open a closure
-        and perform any state mutations necessary based on the action passed in. 
-        
-        We still want to do that for the core logic of the app feature, but we also want compose in
-        the  `CounterFeature` reducer so that its logic can execute on the `tab1` and `tab2` state
-        without the `AppFeature` having to recreate it.
-        
+        次に、 Reducer の ``ComposableArchitecture/Reducer/body-20w8t`` プロパティを実装する必要があります。
+        これまで ``ComposableArchitecture/Reduce`` 型のクロージャに渡された Action に基づいて状態変更を行ってきました。
+
+        `AppFeature` については `tab1` と `tab2` のそれぞれの状態に対してコアロジックを実行できるよう `CounterFeature` Reducer を組み込みます。
+
         @Code(name: "AppFeature.swift", file: 01-04-02-code-0003.swift)
       }
-      
+
       @Step {
-        To compose the `CounterFeature` into the `AppFeature` we can use the 
-        ``ComposableArchitecture/Scope`` reducer. It allows you to focus in on a sub-domain of the
-        parent feature, and run a child reducer on that sub-domain. In this case we want to do that
-        twice. First we single out the `tab1` state and actions in order to run the `CounterFeature`
-        reducer, and then we do it again for the `tab2` state and actions.
-        
-        > Note: The `body` computed property is using result builders behind the scenes. It allows
-        us to list any number of reducers in the `body` as  long as the types match up. When an
-        action comes into the system each reducer will run on the feature's state from 
-        top-to-bottom. Result builders is also what SwiftUI uses to compose view hierarchies
-        in a view `body`.
-        
-        
+        ``ComposableArchitecture/Scope`` Reducer を用いることで、`CounterFeature` を `AppFeature`に組み込み、親機能のサブドメイン内部で子 Reducer を実行できます。
+        まず `tab1` の State と Action を指定して `CounterFeature` Reducer を実行し、次に `tab2` についても同様に指定して実行します。
+
+        > Note: `body` 計算プロパティは Scene のバックグラウンドで Result Builder を用いることで、 `body` 内に型の制約を満たす Reducer をリストアップできます。
+        > Action がシステムに送信されると、各 Reducer が順次機能の状態変更を実行します。
+        > Result Builder は SwiftUI がビューの `body` でビュー階層を構成するのにも使用されています。
+
         @Code(name: "AppFeature.swift", file: 01-04-02-code-0004.swift)
       }
-      
-      The `AppFeature` is now a fully composed feature comprising 3 completely independent features:
-      there's the core app feature logic, the counter feature running in the first tab, and the
-      counter feature running in the second tab.
-      
-      We can even write a test for this integration of features before even getting the view 
-      properly working.
-      
+
+      `AppFeature` は `AppFeature` のコアロジック、1つ目のタブで実行されるカウンター機能、2つ目のタブで実行されるカウンター機能の3つの独立した機能を組み合わされた1つの機能となりました。
+
+      ビューの構築前にこのように1つに統合された機能のテストコードを記述することもできます。
+
       @Step {
-        Create a new file in your test target called AppFeatureTests.swift and paste in the 
-        following basic scaffolding.
-        
-        We are going to start by showing that when the increment button is tapped in the first tab,
-        the count goes up in the `tab1` state.
-        
+        テストターゲットに `AppFeatureTests.swift` というファイルを作成し、以下の基本的な土台を構築します。
+
+        まずは1つ目のタブで "+" ボタンがタップされたときに `tab1` のカウントが増えることを検査していきます。
+
         @Code(name: "AppFeatureTests.swift", file: 01-04-02-code-0005.swift)
       }
-      
+
       @Step {
-        Create a ``ComposableArchitecture/TestStore`` that holds onto the `AppFeature` domain.
-        This is done by providing the initial state of the feature and specifying
-        the reducer that powers the feature.
-        
-        > Note: Remember that the `TestStore` is the testable runtime of a feature that allows you 
-        to send actions and assert on how state changes. It also forces you to assert on how effects
-        emit data back into the system.
-        
+        `AppFeature` ドメインを持つ ``ComposableArchitecture/TestStore`` を作成します。
+        機能の初期状態と機能を実行する Reducer を指定します。
+
+        > Note: `TestStore` は Action を送信し、状態がどのように変化するか検査できる「機能のテストランタイム」であり、 Effect を含む機能全体の振る舞いを時系列で検証することを強制します。
+
         @Code(name: "AppFeatureTests.swift", file: 01-04-02-code-0006.swift)
       }
-      
+
       @Step {
-        Send an action into the test store to emulate the user tapping on the increment button
-        in the first tab.
-        
-        > Tip: Use case key path syntax when sending actions through multiple layers of features.
-        
-        > Note: The nesting of the action enums of the features gives us a natural way to 
-        distinguish between actions in different tabs. Sending `\.tab1.incrementButtonTapped` is 
-        very different from sending  `\.tab2.incrementButtonTapped`.
-        
+        TestStore に Action を送信し、1つ目のタブでのユーザの "+" ボタンのタップ操作をエミュレートします。
+
+        > Tip: KeyPath 構文を用いて複数の層に分割された機能が持つ Action を送信します。
+
+        > Note: 各機能で定義された Action 列挙型がネストになるため、異なるタブの Action は自然に区別されます。
+
         @Code(name: "AppFeatureTests.swift", file: 01-04-02-code-0007.swift)
       }
-      
-      If we were to run this test it would of course fail because we have not asserted on how state
-      changes after sending this action, and by default the ``ComposableArchitecture/TestStore``
-      requires that you exhaustively assert on everything happening in the feature.
-      
+
+      このテストコードは、 Action の送信後の状態の変化を検査していないので失敗します。
+      ``ComposableArchitecture/TestStore`` は、原則として機能内部で起こるあらゆる現象を徹底的に検査することを強制します。
+
       @Step {
-        To get the test to pass we have to open up a trailing closure on `store.send` and mutate
-        the previous version of the feature state so that it matches the state after the action
-        is sent.
-        
+        `store.send` の trailing closure で Action 送信前の状態を変更し、 Action 送信後の状態と一致するようにテストコードを修正します。
+
         @Code(name: "AppFeatureTests.swift", file: 01-04-02-code-0008.swift)
       }
-      
-      And now this test passes!
+
+      これでこのテストコードはパスするようになりました！
     }
   }
-  
-   @Section(title: "Deriving child stores") {
+
+  @Section(title: "子 Store の派生") {
     @ContentAndMedia {
-      Now that we have a single composed `AppFeature` that encapsulates all of the logic and 
-      behavior of the root app and its tabs, we can properly implement the view layer of the 
-      application.
+      1つに統合された `AppFeature` が Root アプリケーションと各タブのすべてのロジックと振る舞いをカプセル化したので、アプリケーションのビュー階層を構築できるようになりました。
     }
-    
+
     @Steps {
-      Rather than holding onto individual stores for each tab in the `AppView`, we can now hold 
-      onto a single store of the composed `AppFeature` domain, and derive child stores for each
-      tab that can be handed to the `CounterView`s.
-      
+      `AppView` のタブごとの Store ではなく、1つに統合された `AppFeature` ドメインの単一の Store を宣言することで、各タブの子 Store を派生させて `CounterView` に渡すことができます。
+
       @Step {
-        Replace the two individual store properties with a single store of the `AppFeature` domain.
-        
+        タブごとの Store プロパティを `AppFeature` ドメインの単一の Store に置き換えます。
+
         @Code(name: "AppFeature.swift", file: 01-04-03-code-0001.swift, previousFile: 01-04-03-code-0001-previous.swift)
       }
-      
+
       @Step {
-        Use the ``ComposableArchitecture/Store/scope(state:action:)-90255`` method on 
-        ``ComposableArchitecture/Store`` to derive a child store focused in on just the `tab1`
-        domain. This is done by using key path syntax to single out the field of the state and
-        the case of the action enum.
-        
+        ``ComposableArchitecture/Store`` の ``ComposableArchitecture/Store/scope(state:action:)-90255`` メソッドを用いて `tab1` ドメインの子 Store を派生させます。
+        State フィールドと Action 列挙型のケースを指定するために KeyPath 構文を使用します。
+
         @Code(name: "AppFeature.swift", file: 01-04-03-code-0002.swift)
       }
-      
+
       @Step {
-        And do the same for the second tab.
-        
+        2つ目のタブについても同様に行います。
+
         @Code(name: "AppFeature.swift", file: 01-04-03-code-0003.swift)
       }
-      
-      That is all it takes. We now have a single ``ComposableArchitecture/Store`` powering this 
-      entire view, and the logic and behavior of both tabs have been composed into a single reducer.
-      We can give the feature a spin by creating a preview in AppFeature.swift.
-      
+
+      単一の ``ComposableArchitecture/Store`` でビュー全体を構築しました。
+      `AppFeature.swift` でプレビューを構築して2つのタブのロジックと振る舞いを統合した単一機能を動作させてみましょう。
+
       @Step {
-        Create a preview for `AppView` by initializing a store with the `AppFeature` domain.
-        
+        `AppFeature` ドメインで Store を初期化して `AppView` のプレビューを構築します。
+
         @Code(name: "AppFeature.swift", file: 01-04-03-code-0004.swift)
       }
-      
-      We can also run the feature in the simulator by updating the entry point of the app to be
-      powered by the `AppView`.
-      
+
+      アプリのエントリーポイントを変更することでシミュレーターで機能を実行することもできます。
+
       @Step {
-        Open App.swift and update the entry point to use `AppView` and `AppFeature`.
-        
+        `App.swift` を開きエントリーポイントで `AppView` と `AppFeature` を使用するように変更します。
+
         @Code(name: "App.swift", file: 01-04-03-code-0005.swift, previousFile: 01-04-03-code-0005-previous.swift)
       }
-      
-      That's the basics of composing features together in the Composable Architecture. In its 
-      simplest form it starts by composing the reducers together in the `body` of a parent reducer
-      and using the ``ComposableArchitecture/Scope`` reducer to focus in on a sub-domain of 
-      the parent to run a child reducer. Then in the view you derive child stores from the parent
-      using the ``ComposableArchitecture/Store/scope(state:action:)-90255`` and hand those child
-      stores to the child views.
-      
-      There are more advanced ways of composing features, especially when it comes to navigation. 
-      See the article <doc:Navigation> for more information on the navigation tools in the library,
-      as well as the second tutorial in <doc:MeetComposableArchitecture>.
+
+      TCA で機能を組み合わせる基本的な方法を紹介しました。
+      最もシンプルなのは親 Reducer の `body` で Reducer を組み合わせ、 ``ComposableArchitecture/Scope`` Reducer を用いて親のサブドメイン内部で子 Reducer を動作させ、ビューでは ``ComposableArchitecture/Store/scope(state:action:)-90255`` をによって親から子 Store を派生させ、それらの子 Store を子ビューに渡す方法です。
+
+      画面遷移で主に使われる、より高度に機能を組み合わせる方法もあります。ライブラリの画面遷移ツールに関する詳細情報については、 <doc:Navigation> を参照してください。
+      また、 <doc:MeetComposableArchitecture> の2つ目のチュートリアルも参考にしてください。
     }
   }
 }
- 

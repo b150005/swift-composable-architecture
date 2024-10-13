@@ -1,51 +1,44 @@
 # ``ComposableArchitecture``
 
-The Composable Architecture (TCA, for short) is a library for building applications in a consistent
-and understandable way, with composition, testing, and ergonomics in mind. It can be used in
-SwiftUI, UIKit, and more, and on any Apple platform (iOS, macOS, tvOS, and watchOS).
+Composable Architecture(TCA) は、一貫性があり理解しやすい方法でアプリケーションを構築するためのライブラリです。
+コンポジション、テスト、人間工学を念頭に置いて設計されています。
+SwiftUI、UIKit、その他のフレームワークで使用でき、Apple のすべてのプラットフォーム(iOS、macOS、tvOS、watchOS)で利用可能です。
 
-## Additional Resources
+## 追加リソース
 
-- [GitHub Repo](https://github.com/pointfreeco/swift-composable-architecture)
-- [Discussions](https://github.com/pointfreeco/swift-composable-architecture/discussions)
-- [Point-Free Videos](https://www.pointfree.co/collections/composable-architecture)
+- [GitHub リポジトリ](https://github.com/pointfreeco/swift-composable-architecture)
+- [ディスカッション](https://github.com/pointfreeco/swift-composable-architecture/discussions)
+- [Point-Free 動画](https://www.pointfree.co/collections/composable-architecture)
 
-## Overview
+## 概要
 
-This library provides a few core tools that can be used to build applications of varying purpose and
-complexity. It provides compelling stories that you can follow to solve many problems you encounter
-day-to-day when building applications, such as:
+このライブラリは、様々な目的や複雑さのアプリケーションを構築するために使用できるいくつかの中核的なツールを提供します。
+アプリケーション構築時に日々遭遇する多くの問題を解決するための魅力的な方法を提供します:
 
-* **State management**
+- **状態管理**
 
-    How to manage the state of your application using simple value types, and share state across
-    many screens so that mutations in one screen can be immediately observed in another screen.
+  シンプルな値型を使用してアプリケーションの状態を管理し、多くの画面間で状態を共有することで、ある画面での変更が即座に別の画面で観察できるようにする方法。
 
-* **Composition**
+- **コンポジション**
 
-    How to break down large features into smaller components that can be extracted to their own,
-    isolated modules and be easily glued back together to form the feature.
+  大きな機能を小さなコンポーネントに分解し、それらを独立したモジュールとして抽出し、再び簡単に組み合わせて機能を形成する方法。
 
-* **Side effects**
+- **副作用**
 
-    How to let certain parts of the application talk to the outside world in the most testable and
-    understandable way possible.
+  アプリケーションの特定の部分が外部世界と通信する際に、最もテスト可能で理解しやすい方法を提供する方法。
 
-* **Testing**
+- **テスト**
 
-    How to not only test a feature built in the architecture, but also write integration tests for
-    features that have been composed of many parts, and write end-to-end tests to understand how
-    side effects influence your application. This allows you to make strong guarantees that your
-    business logic is running in the way you expect.
+  この設計で構築された機能をテストするだけでなく、多くの部品で構成された機能の統合テストや、副作用がアプリケーションにどのように影響するかを理解するためのエンドツーエンドテストを作成する方法。
+  これにより、ビジネスロジックが期待通りに動作していることを強力に保証できます。
 
-* **Ergonomics**
+- **人間工学**
 
-    How to accomplish all of the above in a simple API with as few concepts and moving parts as
-    possible.
+  上記のすべてを、できるだけ少ない概念と動く部分でシンプルな API で実現する方法。
 
-## Topics
+## トピック
 
-### Essentials
+### 基本
 
 - <doc:GettingStarted>
 - <doc:DependencyManagement>
@@ -55,37 +48,36 @@ day-to-day when building applications, such as:
 - <doc:Performance>
 - <doc:FAQ>
 
-### Tutorials
+### チュートリアル
 
 - <doc:MeetComposableArchitecture>
 - <doc:BuildingSyncUps>
 
-### State management
+### 状態管理
 
-- ``Reducer``
-- ``Effect``
-- ``Store``
+- `Reducer`
+- `Effect`
+- `Store`
 - <doc:SharingState>
 
-### Testing
+### テスト
 
-- ``TestStore``
+- `TestStore`
 - <doc:Testing>
 
-### Integrations
+### 統合
 
 - <doc:SwiftConcurrency>
 - <doc:SwiftUIIntegration>
 - <doc:ObservationBackport>
 - <doc:UIKit>
 
-### Migration guides
+### 移行ガイド
 
 - <doc:MigrationGuides>
 
-## See Also
+## 関連項目
 
-The collection of videos from [Point-Free](https://www.pointfree.co) that dive deep into the
-development of the library.
+ライブラリの開発に深く踏み込んだ [Point-Free](https://www.pointfree.co) の動画コレクション。
 
-* [Point-Free Videos](https://www.pointfree.co/collections/composable-architecture)
+- [Point-Free 動画](https://www.pointfree.co/collections/composable-architecture)
